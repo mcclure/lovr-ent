@@ -6,7 +6,8 @@ namespace "standard"
 require "engine.types"
 require "engine.ent"
 
--- Load a series of objects
+-- Ent that loads a series of classes, creates them and sets them as children
+-- Constructor treats its positional arguments as classes to load on onLoad
 
 class.LoaderEnt(OrderedEnt)
 
@@ -15,6 +16,7 @@ function LoaderEnt:_init(spec)
 	self:super() -- spec not passed through. This class is "sealed"
 end
 
+-- Call to load and insert one class by name
 function LoaderEnt:load(name)
 	if stringx.endswith(name, ".txt") then
 		local liststring = lovr.filesystem.load(v)

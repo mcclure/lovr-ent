@@ -7,11 +7,12 @@ require "engine.types"
 
 -- Entity state
 
-ent = {inputLevel = 1} -- Entity machine
-route_terminate = {}
+ent = {inputLevel = 1} -- State used by ent class
+route_terminate = {} -- A special value, return from an event and your children will not be called
 
 local doomed = {}
 
+-- Should be called once at the end of each update. **User code should not call this.**
 function entity_cleanup()
 	if tableTrue(doomed) then
 		for i,v in ipairs(doomed) do
@@ -25,10 +26,12 @@ function entity_cleanup()
 	end
 end
 
+-- Call this with a function and it will be run at the end of the next update, when dead entities are buried.
 function queueDoom(f)
 	table.insert(doomed, f)
 end
 
+-- Call this with an object and a parent and it will be inserted at the end of the next udpate, when dead entities are buried.
 function queueBirth(e, parent)
 	table.insert(doomed, function()
 		e:insert(parent)
@@ -46,20 +49,26 @@ function Ent:_init(spec)
 	ent_id_generator = ent_id_generator + 1
 end
 
-function Ent:route(key, payload)
+-- Call with a function name and an argument and it will be called first on this object, then all its children
+function Ent:route(key, ...)
 	local result
 	if self[key] then
-		result = self[key](self, payload)
+		result = self[key](self, ...)
 	end
 	if result ~= route_terminate then
 		for k,v in pairs(self.kids) do
-			v:route(key, payload)
+			v:route(key, ...)
 		end
 	end
 end
 
+-- Call with a parent object and the object will be inserted into the entity tree at that point
 function Ent:insert(parent)
 	if self.parent then error("Reparenting not currently supported") end
+	if not parent and self ~= ent.root then
+		if not ent.root then error("Tried to insert to the root entity, but there isn't one") end
+		parent = ent.root
+	end
 	self.parent = parent
 	if parent then
 		parent:register(self)
@@ -73,10 +82,12 @@ function Ent:insert(parent)
 	return self
 end
 
+-- Used to set self.loaded properly. **User code should not call this.**
 function Ent:_setLoad()
 	self.loaded = true
 end
 
+-- Call and the object will have self.dead set and then be deleted at the end of the next frame.
 function Ent:die()
 	if self.dead then return end -- Don't die twice
 	self.dead = true
@@ -85,14 +96,17 @@ function Ent:die()
 	table.insert(doomed, self)
 end
 
+-- The entity is being inserted. **User code can overload this, but probably should not call it.**
 function Ent:register(child)
 	self.kids[child.id] = child
 end
 
+-- The entity is being buried. **User code can overload this, but probably should not call it.**
 function Ent:unregister(child)
 	self.kids[child.id] = nil
 end
 
+-- It is the end of the frame. This object was die()d and it's time to delete it. **User code can overload this, but probably should not call it.**
 function Ent:bury()
 	if self.parent then
 		self.parent:unregister(self)
@@ -100,7 +114,7 @@ function Ent:bury()
 	self:route("onBury")
 end
 
--- Children are routed in the order they are added, but unegistration is inefficent
+-- For this class, are routed in the order they are added, but unegistration is inefficent
 class.OrderedEnt(Ent)
 function OrderedEnt:_init(spec)
 	pull(self, {kidOrder={}})
@@ -136,8 +150,9 @@ function OrderedEnt:route(key, payload) -- TODO: Repetitive with Ent:route()?
 	end
 end
 
--- Remember the inputLevel on the day you were born
-class.InputEnt()
+-- This class remembers the inputLevel at the moment it was constructed
+class.InputEnt(Ent)
 function InputEnt:_init(spec)
 	pull(self, {inputLevel = ent.inputLevel})
+	self:super(spec)
 end
