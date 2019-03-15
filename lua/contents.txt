@@ -1,0 +1,56 @@
+app
+	Toplevel ents (Can be addressed at command line)
+app/debug
+	Toplevel ents for overlaying during development
+app/test
+	Toplevel ent "rooms" for demonstrating various features
+
+engine
+	Project support lua files (may pollute global)
+
+ent
+	Component ents (project support that depends on ent and ent_common being already loaded)
+ent/ui2
+	2D UI components
+
+gen
+	Derived resources (output of resgen script)
+
+level
+	Resource files describing levels
+level/rules
+	Resource files describing constants
+
+shader
+	Resource files containing shaders
+shader/shader.lua
+	Standard Lovr shader program
+	source git@github.com:bjornbytes/lovr-docs.git 4d660e879a2418efafb04486d615324d66f87009
+shader/color01.fsh
+shader/color11.fsh
+shader/position01.vsh
+shader/position11.vsh
+	Basic glCommon shaders 
+	01 is the base colored poly shader program
+	11 is the base textured poly shader program
+
+cpml
+	library: vector math
+	source git@github.com:mcclure/cpml.git be0ab44d6af8cc235ed2fbf3a9742f00a9f18cce + mods
+
+pl
+	library: lua utils
+	source penlight 1.6.0 d70ac91eede03936db36b3fc31b62500242ed2e7 + mods (removed init.lua, PR#289)
+
+lib
+	external libraries
+	lovr-mouse source dbcdc086865b46e526d554a9db4fca867d796aea + mods (return nil if can't run)
+	lovr-keyboard source 49a20a90eb2c221c00afff8deeaa12292807e3b7 + mods (return nil if can't run)
+
+conf.lua
+main.lua
+	lovr entry point files
+
+contents.txt
+coordinates.txt
+	Notes to help me remember the conventions of this repo
