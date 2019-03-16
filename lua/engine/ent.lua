@@ -82,16 +82,15 @@ function Ent:insert(parent)
 	return self
 end
 
--- Used to set self.loaded properly. **User code should not call this.**
-function Ent:_setLoad()
-	self.loaded = true
-end
+-- Used to set self.loaded and self.dead properly. **User code should not call these.**
+function Ent:_setLoad() self.loaded = true end
+function Ent:_setDead() self.dead = true end
 
 -- Call and the object will have self.dead set and then be deleted at the end of the next frame.
 function Ent:die()
 	if self.dead then return end -- Don't die twice
-	self.dead = true
 	self:route("onDie")
+	self:route("_setDead")
 	
 	table.insert(doomed, self)
 end

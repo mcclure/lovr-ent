@@ -6,7 +6,7 @@ The software in here is mostly a hodgepodge of "whatever I need", but the core i
 * Modified versions of the [CPML](https://github.com/excessive/cpml) (vector math) and [Penlight](https://github.com/stevedonovan/Penlight) (classes and various Lua utilities) libraries
 * My [namespace.lua](https://bitbucket.org/runhello/namespace.lua) library
 
-A map of all included files is in [contents.txt](lua/contents.txt). The license information is (here)[LICENSE.txt]. I have a page with more LÖVR resources (here)[https://mcclure.github.io/mermaid-lovr/].
+A map of all included files is in [contents.txt](lua/contents.txt). The license information is [here](LICENSE.txt). I have a page with more LÖVR resources [here](https://mcclure.github.io/mermaid-lovr/).
 
 # Why use this?
 
@@ -68,6 +68,8 @@ If, say, "onDraw" fires, then for each entity starting with `ent.root` that enti
 
 So Ents live in a tree of entities. If you've used Unity, Ents are kind of like a combination of Components, gameObjects and scenes. (You can't at the moment give an Ent an inheritable "transform" or world position, but this may appear in a later version of lovr-ent.)
 
+### Ent lifecycle
+
 To create an Ent, you call its constructor; the default constructor for Ents takes a table as argument, and assigns all fields to the entity object. So if you say `YourEnt{speed=3}`, this creates a YourEnt object where `self.speed` is 3 in all methods. Once you've constructed the Ent, you need to insert it to add it to the tree: call `insert( PARENT )` with the . If you don't list a parent the entity will automatically add itself to `ent.root`, but usually Ents will be created by methods of other Ents, so you'll want to set `self` as the parent.
 
 By the way, **the "onLoad" event is special**. It is called not just when `lovr.onLoad()` is called, but also when any object is `insert()`ed to an object which is a child of the root if `lovr.onLoad()` has already been called. This means most of the things you'd normally do in a constructor, like setting default values for variables, it's smarter to do in `onLoad`, since that code will be called only when the object "goes live".
@@ -80,15 +82,13 @@ By the way, a cool thing about the Ent default constructor is that you can do on
 
 Running this code will create and attach to the root an object that prints the current frame's timestep on every frame.
 
-Although lovr-ent is tied in pretty closely with LÖVR, there's nothing LÖVR-specific about the ent system itself. You could pull "engine/ent.lua" out and use it in a non-LÖVR project, and in fact ent.lua is just a rewrite of similar systems I've previously used in the [Polycode](https://bitbucket.org/runhello/polyconsole) and [UFO](https://bitbucket.org/runhello/ufo/wiki/Home) LUA frameworks.
-
 ### Using LoaderEnt
 
 LoaderEnt is a built-in entity that loads and runs Ent classes from disk. The root entity is a LoaderEnt, and it loads the classes in the command line. So if you launch your game by running:
 
     lovr lovr-ent/lua app/test/testUi
 
-Then lovr-ent will load and run the class in the file "app/test/testUi.lua" (it will `require()` "app/test/testUi", construct the class it returns, and call `insert()`). We can get fancier if we download and add in my other LÖVR helper tool, (Lodr)[https://github.com/mcclure/lodr]:
+Then lovr-ent will load and run the class in the file "app/test/testUi.lua" (it will `require()` "app/test/testUi", construct the class it returns, and call `insert()`). We can get fancier if we download and add in my other LÖVR helper tool, [Lodr](https://github.com/mcclure/lodr):
 
     lovr lovr-lodr lovr-ent/lua app/test/cube app/debug/hand app/debug/fps
 
@@ -96,10 +96,78 @@ What's happening here? Well, lovr loads Lodr, which loads lovr-ent, which loads 
 
 In order for LoaderEnt to load a .lua file, the .lua file needs to return a Ent **class**, like the cube.lua example up there does. LoaderEnt can also load specially formatted .txt files, where each line is one path to something LoaderEnt knows how to load (a class .lua or txt file).
 
-### Doom
+### Ent lifecycle, continued
+
+As above, when an `insert()`ed object becomes "live" (either `lovr.load` is called, or immediately on `insert()` if that's already happened), it gets an "onLoad" event. An object which has had its "onLoad" called has the `ent.loaded` field set.
+
+As above, when you tell an ent to `die()`, it calls "onDie" on itself and its children, then remains in the tree until the end of the current frame. An object which has had its "onDie" called has the `ent.dead` field set.
+
+When the `die()`d, it calls "onBury" on itself and its children, then removes itself from the tree. The garbage collector is now free to reclaim it.
+
+It's nice to perform changes to the tree all at once so an object doesn't accidentally participate in only half of a frame. Toward that end, if you have an object you want to **insert** in the tree but only in the after-period at the end of a frame, you can use:
+
+    queueBirth( someConstructedEnt, someParent )
+
+Or if you just have some general frame cleanup of some sort, you can use
+
+    queueDoom( someFunction )
+
+And someFunction will be called during that same cleanup. Burying, birth and DOOM all occur in the order in which their respective `die()`, `queueBirth()` or `queueDoom()` got called.
+
+### By the way
+
+Although lovr-ent is tied in pretty closely with LÖVR, there's nothing LÖVR-specific about the ent system itself. You could pull "engine/ent.lua" out and use it in a non-LÖVR project, and in fact ent.lua is just a rewrite of similar systems I've previously used in the [Polycode](https://bitbucket.org/runhello/polyconsole) and [UFO](https://bitbucket.org/runhello/ufo/wiki/Home) LUA frameworks.
 
 ## Using namespaces
 
+If you want to understand namespaces, [it has its documentation on a separate page](https://bitbucket.org/runhello/namespace.lua).
+
+But, the short version is: Normally in a Lua program every file has the same globals table. But if you put `namespace "somename"` at the top of your file, globals in that file will be shared only between other `namespace "somename"` files.
+
+The way I recommend using this is, look for the "create a namespace for your game here" comment in main.lua. Delete that, insert `namespace("mygamename", "standard")`, and then assign any globals you want in your program. Then put `namespace "mygamename"` at the top of all your game's source files.
+
+("standard" is the namespace that's used by lovr-ent itself. You want your namespace to inherit from "standard" so it's got all the lovr-ent stuff in it.)
+
 ## Other misc stuff
 
+There's a file [types.lua](lua/engine/types.lua) which has a bunch of . The contents are documented in the comments of that file, but it contains:
+
+* `pull(dst, src)` - copy all the fields from one object into another
+* `tableTrue(t)` - true if table is nonempty
+* `classNamed(name, parent)` - like calling Penlight `class()`, but sets the name
+* A queue class
+* A stack class
+
 ## How to use the UI2 library
+
+When you run LÖVR on a desktop computer, it displays a "mirror" window showing a copy of what's in the headset. There's a special callback, which in lovr-ent becomes the `onMirror` event, that lets you draw things just into this mirror window. I think this is a great place to draw 2D interfaces for debugging, level editor type things, etc.
+
+Because the 2D UI parts of this library are intended for developer tools, not end user interfaces, they are all pretty simplistic.
+
+### Modes and "flat"
+
+Normally, when `onMirror` gets called, the camera is still set up for 3D drawing. If you call
+
+    `uiMode()`
+
+as the first line of your onMirror, it will set up a reasonable 2D orthographic camera (top of screen is y=1, bottom is y=-1, left side is -aspect and right side is +aspect where "aspect" is the window width divided by its height.
+
+There's a convenient table in `engine/flat.lua` (see the [comments](lua/engine/flat.lua) in that file):
+
+    local flat = require "engine.flat"
+
+...containing the metrics of the mirror window and a mirror-appropriate font.
+
+### UI2
+
+Lovr-ent also comes with a file full of Ents that act as simple UI elements:
+
+    local ui2 = require "ent.ui2"
+
+At the moment, it contains labels and buttons and there's an auto-layout class that sticks all the elements in the corner one after the other. This is mostly documented [in the file](lua/ent/ui/init.lua), but the best way to understand it is to just read [the example program](lua/app/test/testUi.lua). It's all basically obvious.
+
+### UI2: The nonobvious parts
+
+When you create a layout manager object, one of the allowed constructor parameters is `pass=sometable`. When the layout manager does layout, for each object it lays out, it will take every field in `sometable` and set those same fields on the table. If you want, in an Ent subclass you make, to do something with the passed parameters other than just setting them, overload `layoutPass()`.
+
+There's a class in `ui2` named `SwapEnt`. This class adds one additional helper method to Ent, `swap(otherEnt)`. This method causes the `swap()`ed ent to `die()`, then queue `otherEnt` for birth on the next frame. What is this for? Well, probably, if you're making debug/test UI screens, you won't have just one UI screen. You probably have several screens and some kind of top level main menu linking them all. So when you write the Ent that allocates and lays out all your ButtonEnts, have it inherit from `SwapEnt`, and then you can easily swap to another screen by creating it and calling `Swap{}` or just close by calling `swap()` with nil.
