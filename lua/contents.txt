@@ -13,26 +13,11 @@ ent
 ent/ui2
 	2D UI components
 
-gen
-	Derived resources (output of resgen script)
-
-level
-	Resource files describing levels
-level/rules
-	Resource files describing constants
-
 shader
 	Resource files containing shaders
 shader/shader.lua
 	Standard Lovr shader program
 	source git@github.com:bjornbytes/lovr-docs.git 4d660e879a2418efafb04486d615324d66f87009
-shader/color01.fsh
-shader/color11.fsh
-shader/position01.vsh
-shader/position11.vsh
-	Basic glCommon shaders 
-	01 is the base colored poly shader program
-	11 is the base textured poly shader program
 
 cpml
 	library: vector math

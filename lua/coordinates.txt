@@ -9,6 +9,3 @@ Textures
 	y+ down
 Pixel shaders
 	y+ down
-
-"anchors" pair two letters:
-	(l)eft (r)ight (c)enter  (t)op (b)ottom middle
