@@ -1,4 +1,4 @@
--- Namespace support for Lua. Version 1.0
+-- Namespace support for Lua. Version 1.1
 --
 -- Suggested usage: At the top of your entry point file, say
 --     namespace = require "engine.namespace"
@@ -32,20 +32,27 @@ function namespace.space(name, inherit)
 			preload[name] = nil
 			if preload_inherit then 
 				if inherit and inherit ~= preload_inherit then
-					error(string.format("Namespace %s given conflicting inherit instructions: %s in prepare() and %s later", name, preload_inherit, inherit))
+					error(string.format("Namespace \"%s\" given conflicting inherit instructions: \"%s\" in prepare() and \"%s\" later", name, preload_inherit, inherit))
 				end
 				inherit = preload_inherit
 			end
 		end
 
-		-- Get inherit table
+		-- "inherit" could be one of several types right now. change it to a table.
 		if type(inherit) == "string" then
-			inherit = namespace.spaces[inherit] or 
-				error("Tried to inherit from namespace " .. inherit .. " but doesn't exist")
-		elseif not inherit then
+			local inherit_table = namespace.spaces[inherit]
+			if not inherit_table then
+				if preload[inherit] then -- Handle prepare()
+					inherit_table = namespace.space(inherit)
+				else
+					error(string.format("Namespace \"%s\" tried to inherit from namespace \"%s\", but that doesn't exist", name, inherit))
+				end
+			end
+			inherit = inherit_table
+		elseif not inherit then -- No inherit specified, use default
 			inherit = origin or getfenv(0)
 		end
-		-- Inherit from inherit table
+		-- Now that we have an inherit table, inherit from it
 		space = table_clone(inherit)
 		local inherit_mt = getmetatable(inherit)
 		if inherit_mt then
@@ -77,8 +84,8 @@ namespace_mt.__call = enter
 -- On first attempt to load namespace 'inherit' will be inherited,
 -- and 'construct' will be called with the new space table as argument.
 function namespace.prepare(name, inherit, construct)
-	if preload[name] then error("Called prepare() twice on namespace %s", name) end
-	if namespace.spaces[name] then error("Called prepare() on existing namespace %s", name) end
+	if preload[name] then error(string.format("Called prepare() twice on namespace \"%s\"", name)) end
+	if namespace.spaces[name] then error(string.format("Called prepare() on already-existing namespace \"%s\"", name)) end
 	preload[name] = {inherit, construct}
 end
 
