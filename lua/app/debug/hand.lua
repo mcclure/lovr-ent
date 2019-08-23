@@ -1,4 +1,4 @@
--- Standard 
+-- Minimal controller draw ent. Inherit and override "guideline" function to control pointer line display 
 namespace "standard"
 
 local Hand = classNamed("Hand", Ent)
