@@ -65,7 +65,8 @@ end
 -- Call with a parent object and the object will be inserted into the entity tree at that point
 function Ent:insert(parent)
 	if self.parent then error("Reparenting not currently supported") end
-	if not parent and self ~= ent.root then
+	if not parent and self ~= ent.root then -- Default to ent.root
+		if ent.strictInsert then error("insert() with no parent") end -- Set this flag for no default
 		if not ent.root then error("Tried to insert to the root entity, but there isn't one") end
 		parent = ent.root
 	end

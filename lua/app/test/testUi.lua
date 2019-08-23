@@ -2,12 +2,9 @@
 
 namespace "standard"
 
-local flat = require "engine.flat"
 local ui2 = require "ent.ui2"
 
 local TestUi = classNamed("TestUi", ui2.ScreenEnt)
-
-local margin = .05
 
 function TestUi:onLoad()
 	ui2.routeMouse()
@@ -32,6 +29,12 @@ function TestUi:onLoad()
 				self.label = self.label + 1
 		end},
 	}
+	for i,v in ipairs{"buttonx", "nonsense", "garb", "garbage", "not", "hing", "nothing", "no", "thing"} do
+		table.insert(ents, ui2.ButtonEnt{label=v})
+	end
+	local slider = ui2.SliderEnt()
+	table.insert(ents, slider)
+	table.insert(ents, ui2.SliderWatcherEnt{watch=slider})
 
 	local layout = ui2.PileLayout{managed=ents, parent=self, pass={swap=self}}
 	layout:layout()

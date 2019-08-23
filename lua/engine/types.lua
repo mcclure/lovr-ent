@@ -16,6 +16,29 @@ function tableTrue(e) -- True if table nonempty
 	return next(e) ~= nil
 end
 
+function toboolean(v) -- As named
+	return v and true or false
+end
+
+local function charIter(s, i) -- (Helper for ichars)
+	i = i + 1
+	if i <= #s then
+		return i, s:sub(i, i)
+	end
+end
+
+function ichars(s) -- ipairs() but for characters of an array
+	return charIter, s, 0
+end
+
+function mapRange(count, f) -- Return a table prepopulated either with a range of ints or with the return values of a (optional) constructor function f
+	local t = {}
+	for i=1,count do
+		table.insert(t, f and f(i) or i)
+	end
+	return t
+end
+
 function classNamed(name, parent) -- create dynalloc class with name
 	local cls = class(parent)
 	cls._name = name

@@ -1,12 +1,26 @@
 app
 	Toplevel ents (Can be addressed at command line)
+
 app/debug
-	Toplevel ents for overlaying during development
+	Toplevel ents for development
+app/debug/fps
+	Overlay showing the current frames per second
+app/debug/hand
+	Overlay displaying the controllers plus "pointing this way" lines
+app/debug/modelView
+	Standalone app that displays a list of all models in the current project and lets you pick one to view
+
 app/test
 	Toplevel ent "rooms" for demonstrating various features
+app/test/cube
+	Basic app example. Just draws some cubes.
+app/test/testUi
+	Sample code for various features of the ui2 library.
 
 engine
 	Project support lua files (may pollute global)
+engine/flat
+	Various constants for displaying objects in onMirror
 
 ent
 	Component ents (project support that depends on ent and ent_common being already loaded)

@@ -6,17 +6,18 @@ do
 	local space = namespace.space("standard")
 
 	-- PL classes missing? add here:
-	for _,v in ipairs{"class", "pretty", "stringx"} do
+	for _,v in ipairs{"class", "pretty", "stringx", "tablex"} do
 		space[v] = require("pl." .. v)
 	end
 
 	require "engine.types"
 	require "engine.ent"
 	require "engine.common_ent"
+	require "engine.lovr"
 	require "engine.mode"
 
 	space.cpml = require "cpml" -- CPML classes missing? Add here:
-	for _,v in ipairs{"bound2", "bound3", "vec2", "vec3", "quat", "mat4"} do
+	for _,v in ipairs{"bound2", "bound3", "vec2", "vec3", "quat", "mat4", "color", "utils"} do
 		space[v] = space.cpml[v]
 	end
 end

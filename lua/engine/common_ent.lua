@@ -40,4 +40,3 @@ function LoaderEnt:onLoad()
 	self.spec = nil
 	for i,v in ipairs(spec) do self:load(v) end
 end
-

@@ -15,6 +15,6 @@ flat.font = lovr.graphics.newFont(16*flat.dpi)  -- Font appropriate for screen-s
 flat.font:setPixelDensity(1)
 flat.fontscale = flat.height/flat.pixheight -- Use as scale when drawing with this font
 
-flat.matrix = lovr.math.mat4():orthographic(-flat.aspect, flat.aspect, 1, -1, -64, 64)
+flat.matrix = lovr.math.newMat4():orthographic(-flat.aspect, flat.aspect, 1, -1, -64, 64)
 
 return flat
