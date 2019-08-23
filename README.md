@@ -5,8 +5,11 @@ The software in here is mostly a hodgepodge of "whatever I need", but the core i
 * A simple 2D UI library for LÖVR's on-monitor "mirror" window, useful for debug UI.
 * Modified versions of the [CPML](https://github.com/excessive/cpml) (vector math) and [Penlight](https://github.com/stevedonovan/Penlight) (classes and various Lua utilities) libraries
 * My [namespace.lua](https://bitbucket.org/runhello/namespace.lua) library
+* A standalone app to preview model files
 
 A map of all included files is in [contents.txt](lua/contents.txt). The license information is [here](LICENSE.txt). I have a page with more LÖVR resources [here](https://mcclure.github.io/mermaid-lovr/).
+
+This code assumes LÖVR version 0.13.
 
 # Why use this?
 
@@ -130,13 +133,32 @@ The way I recommend using this is, look for the "create a namespace for your gam
 
 ## Other misc stuff
 
-There's a file [types.lua](lua/engine/types.lua) which has a bunch of . The contents are documented in the comments of that file, but it contains:
+There's two files [types.lua](lua/engine/types.lua) and [lovr.lua](lua/engine/lovr.lua) which contain miscellaneous utilities. The contents are documented in the comments of those files, but they contain:
+
+In types.lua:
 
 * `pull(dst, src)` - copy all the fields from one object into another
 * `tableTrue(t)` - true if table is nonempty
+* `toboolean(v)` - converts value to true (if truthy) or false (if falsy)
+* `ichars(str)` - like ipairs() but iterates over characters in a string
+* `mapRange(count, f)` - returns table mapping f over the integer range 1..count
 * `classNamed(name, parent)` - like calling Penlight `class()`, but sets the name
 * A queue class
 * A stack class
+
+In lovr.lua:
+
+* `unpackPose(controllerName)` - Given a controller name, returns a (vec3 at, quaternion rotation) pair describing its pose
+* `offsetLine(at, q, offset)` and `forwardLine(at,q)` - Takes the pair returned from `unpackPose` and either maps a vector into its pose's reference frame, or returns an arbitrary point the controller is "pointing at".
+* `primaryTouched(controllerName)`, `primaryDown(controllerName)`, `primaryAxis(controllerName)` - Equivalents of `lovr.headset` `isTouched`, `isDown` and `axis` but for whatever the appropriate "primary" thumb direction is on that device
+
+## How to use modelView
+
+If you launch lovr-ent with the argument `app/debug/modelView`, like:
+
+    lovr lovr-ent/lua app/debug/modelView
+
+This will launch an app that searches the entire lovr filesystem, lists all .gltf, .glb or .obj files it finds, and once you have selected one displays it, slowly rotating, with your choice of shaders.
 
 ## How to use the UI2 library
 
@@ -170,4 +192,4 @@ At the moment, it contains labels and buttons and there's an auto-layout class t
 
 When you create a layout manager object, one of the allowed constructor parameters is `pass=sometable`. When the layout manager does layout, for each object it lays out, it will take every field in `sometable` and set those same fields on the table. If you want, in an Ent subclass you make, to do something with the passed parameters other than just setting them, overload `layoutPass()`.
 
-There's a class in `ui2` named `SwapEnt`. This class adds one additional helper method to Ent, `swap(otherEnt)`. This method causes the `swap()`ed ent to `die()`, then queue `otherEnt` for birth on the next frame. What is this for? Well, probably, if you're making debug/test UI screens, you won't have just one UI screen. You probably have several screens and some kind of top level main menu linking them all. So when you write the Ent that allocates and lays out all your ButtonEnts, have it inherit from `SwapEnt`, and then you can easily swap to another screen by creating it and calling `Swap{}` or just close by calling `swap()` with nil.
+There's a class in `ui2` named `SwapEnt`. This class adds one additional helper method to Ent, `swap(otherEnt)`. This method causes the `swap()`ed ent to `die()`, then queue `otherEnt` for birth on the next frame. What is this for? Well, probably, if you're making debug/test UI screens, you won't have just one UI screen. You probably have several screens and some kind of top level main menu linking them all. So when you write the Ent that allocates and lays out all your ButtonEnts, have it inherit from `SwapEnt`, and then you can easily swap to another screen by creating it and calling `Swap{}` or just close by calling `swap()` with nil. (The modelView app is a good example of how to build a multiscreen application this way.)
