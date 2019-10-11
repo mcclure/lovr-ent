@@ -160,6 +160,8 @@ If you launch lovr-ent with the argument `app/debug/modelView`, like:
 
 This will launch an app that searches the entire lovr filesystem, lists all .gltf, .glb or .obj files it finds, and once you have selected one displays it, slowly rotating, with your choice of shaders.
 
+Clicking the Standard... button will allow you to adjust the shader properties, and clicking Edit... will allow you to view or alter (but not save back) some properties of the animations, materials, and skeleton nodes in the model. Some additional information will be printed to STDOUT in these panes.
+
 ## How to use the UI2 library
 
 When you run LÖVR on a desktop computer, it displays a "mirror" window showing a copy of what's in the headset. There's a special callback, which in lovr-ent becomes the `onMirror` event, that lets you draw things just into this mirror window. I think this is a great place to draw 2D interfaces for debugging, level editor type things, etc.
