@@ -12,6 +12,37 @@ function pull(dst, src) -- Insert all members of a into b
 	end
 end
 
+function tableReverse(t_) -- Reverse a table
+	local t = {}
+	for k,v in pairs(t_) do
+		t[v] = k
+	end
+	return t
+end
+
+function tableConcat(a, b) -- Concatenate two tables into a third
+	local result = {}
+	pull(result, a)
+	pull(result, b)
+	return result
+end
+
+function tableSkim(a, keys) -- Extract only these keys from a table
+	local t = {}
+	for _,v in ipairs(keys) do
+		t[v] = a[v]
+	end
+	return t
+end
+
+function tableSkimUnpack(a, keys) -- Extract only these keys from a table (unpacked list)
+	local t = {}
+	for _,v in ipairs(keys) do
+		table.insert(t, a[v])
+	end
+	return unpack(t)
+end
+
 function tableTrue(e) -- True if table nonempty
 	return next(e) ~= nil
 end

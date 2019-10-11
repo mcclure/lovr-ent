@@ -70,6 +70,14 @@ function bound2.extend(a, center)
 	return bound2.new(a.min:component_min(center), a.max:component_max(center))
 end
 
+--- Extend bound to entirety of other bound
+-- @tparam bound2 a bound
+-- @tparam bound2 bound to cover
+-- @treturn bound2 Bound covering current min and max of each bound in the pair
+function bound2.extendBound(a, b)
+	return a:extend(b.min):extend(b.max)
+end
+
 --- Get size of bounding box as a vector 
 -- @tparam bound2 a bound
 -- @treturn vec2 Vector spanning min to max points

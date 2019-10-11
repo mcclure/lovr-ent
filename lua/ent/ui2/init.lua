@@ -243,6 +243,7 @@ function ui2.UiEnt:onMirror()
 	local center = self.bound:center()
 	local size = self.bound:size()
 
+	lovr.graphics.setColor(1,1,1,1)
 	lovr.graphics.setFont(flat.font)
 	lovr.graphics.print(self.label, center.x, center.y, 0, flat.fontscale)
 end
@@ -271,7 +272,6 @@ function ui2.ButtonEnt:onMirror()
 	local gray = self.down and 0.5 or 0.8
 	lovr.graphics.setColor(gray,gray,gray,0.8)
 	lovr.graphics.plane('fill', center.x, center.y, 0, size.x, size.y)
-	lovr.graphics.setColor(1,1,1,1)
 
 	ui2.UiEnt.onMirror(self)
 end
@@ -292,13 +292,15 @@ end
 --     lineWidth: recommended line width float
 --     handleWidth: recommended handle width+height
 --     wholeWidth: recommended size of entire line
---	   value: value 0-1
+--     minRange, maxRange: span of underlying value range (default 0,1)
+-- members:
+--	   value: value minRange-maxRange (so 0-1 by default)
+--     disabled: if true hide handle
 
 ui2.SliderEnt = classNamed("SliderEnt", ui2.UiBaseEnt)
 
 function ui2.SliderEnt:_init(spec) -- Note by allowing wholeWidth I made my life really hard
-	pull(spec, {value=0, minRange=0, maxRange=1})
-	self:super(spec)
+	self:super(tableConcat({value=0, minRange=0, maxRange=1}, spec))
 	if self.lineWidth and self.handleWidth and self.wholeWidth then
 		error("Can only specify two of lineWidth, handleWidth, wholeWidth")
 	end
@@ -327,7 +329,7 @@ function ui2.SliderEnt:onMirror()
 	local zoff = 0.125
 	lovr.graphics.setColor(0,1,1,1)
 	lovr.graphics.line(center.x - self.lineWidth/2, center.y, -zoff, center.x + self.lineWidth/2, center.y, -zoff)
-	if self.value then
+	if not self.disabled and self.value then
 		local across = (self.value-self.minRange) / (self.maxRange - self.minRange)
 		across = center.x + self.lineWidth * (across - 0.5)
 		lovr.graphics.setColor(0.2,0.2,0.2,0.8)
@@ -338,13 +340,13 @@ function ui2.SliderEnt:onMirror()
 end
 
 function ui2.SliderEnt:onPress(at)
-	if self.bound:contains(at) then
+	if not self.disabled and self.bound:contains(at) then
 		local halfline = self.lineWidth/2
 		self.value = utils.clamp(
 			(at.x - (self.bound.min.x + self.handleWidth/2))/self.lineWidth,
 			0,1
 		) * (self.maxRange-self.minRange) + self.minRange
-		if self.onChange then self:onChange() end -- See also: self:onButton "is it weird"?
+		if self.onChange then self:onChange(self.value) end -- See also: self:onButton "is it weird"?
 	end
 end
 
@@ -360,12 +362,11 @@ function ui2.SliderWatcherEnt:sizeHint(margin, overrideText)
 end
 
 function ui2.SliderWatcherEnt:onMirror()
-	self.label = self.watch.value and string.format("%.2f", self.watch.value) or ""
+	self.label = (not self.disabled and self.watch.value) and string.format("%.2f", self.watch.value) or ""
 	return ui2.UiEnt.onMirror(self)
 end
 
-
--- Container for other objects
+-- Ent which acts as a container for other objects
 -- spec:
 --     layout: a Layout object (required)
 -- members:
@@ -406,6 +407,46 @@ function ui2.LayoutEnt:onLoad()
 	if self.standalone then
 		self.layout:layout() -- In case sizeHint wasn't called
 	end
+end
+
+-- A label, a slider, and a slider watcher
+-- spec:
+--     startLabel: initial label
+--     sliderSpec: label display props
+-- members:
+--     labelEnt, sliderEnt, sliderWatcherEnt: as named
+-- methods:
+--     getLabel(), setLabel(label)
+--     getValue(), setValue(value)
+
+ui2.SliderTripletEnt = classNamed("SliderTripletEnt", ui2.LayoutEnt)
+
+function ui2.SliderTripletEnt:_init(spec)
+	pull(self, {anchor = "lt"})
+	self:super(spec)
+	self.labelEnt = self.labelEnt or ui2.UiEnt{label=self.startLabel}
+		self.layout:add(self.labelEnt) self.startLabel = nil
+
+	local sliderSpec = {value=self.value, onChange = function(slider)
+		self.value = slider.value
+		if self.onChange then self:onChange(self.value) end
+	end}
+	pull(sliderSpec, self.sliderSpec)
+	self.sliderEnt = self.sliderEnt or ui2.SliderEnt(sliderSpec)
+		self.layout:add(self.sliderEnt) self.sliderSpec = nil
+
+	self.sliderWatcherEnt = self.sliderWatcherEnt or ui2.SliderWatcherEnt{watch=self.sliderEnt}
+		self.layout:add(self.sliderWatcherEnt)
+end
+
+function ui2.SliderTripletEnt:getLabel() return self.labelEnt.label end
+function ui2.SliderTripletEnt:setLabel(l) self.labelEnt.label = l end
+function ui2.SliderTripletEnt:getValue() return self.sliderEnt.value end
+function ui2.SliderTripletEnt:setValue(v) self.sliderEnt.value = v end
+function ui2.SliderTripletEnt:getDisabled() return self.sliderEnt.disabled end
+function ui2.SliderTripletEnt:setDisabled(v)
+	self.sliderEnt.disabled = v
+	self.sliderWatcherEnt.disabled = v
 end
 
 return ui2

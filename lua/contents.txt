@@ -16,6 +16,8 @@ app/test/cube
 	Basic app example. Just draws some cubes.
 app/test/testUi
 	Sample code for various features of the ui2 library.
+app/test/vibrate
+	Simple vibrate test, vibrates when various Quest buttons are pressed.
 
 engine
 	Project support lua files (may pollute global)
