@@ -35,7 +35,7 @@ end)
 
 namespace "standard"
 
-local defaultApp = "app/test/vibrate"
+local defaultApp = "app/test/cube"
 
 function lovr.load()
 	ent.root = LoaderEnt(#arg > 0 and arg or {defaultApp})
