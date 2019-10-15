@@ -5,7 +5,7 @@ The software in here is mostly a hodgepodge of "whatever I need", but the core i
 * A simple 2D UI library for LÖVR's on-monitor "mirror" window, useful for debug UI.
 * Modified versions of the [CPML](https://github.com/excessive/cpml) (vector math) and [Penlight](https://github.com/stevedonovan/Penlight) (classes and various Lua utilities) libraries
 * My [namespace.lua](https://bitbucket.org/runhello/namespace.lua) library
-* A standalone app to preview model files
+* A standalone app to preview 3D model files and inspect their materials, animation nodes and animations.
 
 A map of all included files is in [contents.txt](lua/contents.txt). The license information is [here](LICENSE.txt). I have a page with more LÖVR resources [here](https://mcclure.github.io/mermaid-lovr/).
 
@@ -44,7 +44,7 @@ Let's take a look at the "cube.lua" example program packaged in the repo:
 
 	return CubeTest
 
-If you've already used LÖVR, this looks a lot like a normal LÖVR program-- instead of implementing `lovr.update()` it implements `CubeTest:onUpdate(dt)`. But it's done a little different and this gives us some neat advantages. Because this program is enclosed in an object (an "entity"), we could swap it out for another "entity" program very easily, or run it at the same time as another "entity" program. In my main game project, I have a variety of small helper programs in the same repo, that let me test or edit various parts of the game; I use the command line to decide which one I want to run. Below there's an example where the command line is used to tell lovr-ent to run the cubes program at the same time as another program that displays the FPS in the corner. It would also be easy to write a program where the main program's "entity" loaded a copy, or several copies, of the CubeTest entity as children and presented them in a scene.
+If you've already used LÖVR, this looks a lot like a normal LÖVR program-- instead of implementing `lovr.update()` it implements `CubeTest:onUpdate(dt)`. But it's set up a little different and this gives us some neat advantages. Because this program is enclosed in an object (an "entity"), we could swap it out for another "entity" program very easily, or run it at the same time as another "entity" program. In my main game project, I have a variety of small helper programs in the same repo, which let me test or edit various parts of the game; I use the command line to decide which ones I want to run. Below there's an example where the command line is used to tell lovr-ent to run the cubes program at the same time as another program that displays the FPS in the corner. It would also be easy to write a program where the main program's "entity" loaded a copy, or several copies with different parameters, of the CubeTest entity as children and presented them in a scene.
 
 You'll also notice the "namespace" tag at the top of the file. This takes away the risk of accidentally letting globals from one file contaminate other files-- globals will only be shared between the `.lua` files that start with `namespace "cubetest"`.
 
@@ -54,13 +54,13 @@ You want to copy the `lua` folder in this repo into your own repo (or just devel
 
 You should take a look at [main.lua](lua/main.lua). There's some stuff here you probably want to change: There's a list of modules imported from CPML and Penlight. There's a section labeled "Suggest you create a namespace for your game here", which you probably want to uncomment, and set up the globals for your own game's namespace there. You also want to change the "defaultApp" variable to point to your main Ent.
 
-Now you'll want to start adding your own .lua files to the project, for your main Ent and any helper stuff your game needs. I use the `app/` directory to store entities that could potentially be run alone as the main Ent, an `ent/` directory to store reusable entities that another Ent might load as a child, the `engine/` directory to store other helper files, and `level/` and `resource/` directories to store my helper files. But you can do whatever.
+Now you'll want to start adding your own .lua files to the project, for your main Ent and any helper stuff your game needs. I use the `app/` directory to store entities that could potentially be run alone as the main Ent, an `ent/` directory to store reusable entities that another Ent might load as a child, the `engine/` directory to store other helper files, and `level/` and `resource/` directories to store my helper files. But you can do it however.
 
 ## Using Ents
 
 The first thing to know is Ents are classes, using the Penlight class library (see [here](https://stevedonovan.github.io/Penlight/api/libraries/pl.class.html), or "Simplifying Object-Oriented Programming in Lua" [here](https://stevedonovan.github.io/Penlight/api/manual/01-introduction.md.html)). You probably need to understand what "Classes", "Objects", "Inheritance" and "Instances" are to go any further, and you need to understand the difference between `.` and `:` in Lua.
 
-Entities are instances of `Ent`, or a class inheriting from `Ent`. Every entity keeps a list of child entities. When events occur-- the program boots, there is an update, it is time to draw-- those events are "routed" to every Ent, starting with the "root" ent. Some events are:
+Entities are instances of `Ent` (or any class inheriting from `Ent`). Every entity keeps a list of child entities. When events occur-- the program boots, there is an update, it is time to draw-- those events are "routed" to every living Ent, starting with the "root" Ent. Some events are:
 
 	* onLoad: Equivalent of lovr.load
 	* onUpdate: Equivalent of lovr.update
@@ -77,9 +77,9 @@ To create an Ent, you call its constructor; the default constructor for Ents tak
 
 By the way, **the "onLoad" event is special**. It is called not just when `lovr.onLoad()` is called, but also when any object is `insert()`ed to an object which is a child of the root if `lovr.onLoad()` has already been called. This means most of the things you'd normally do in a constructor, like setting default values for variables, it's smarter to do in `onLoad`, since that code will be called only when the object "goes live".
 
-When you're done with an Ent, call `yourEnt:die()`. This registers your ent to be removed from the tree (which will remove all its children as well) at the end of the current frame. You'll get an "onDie" event call if you or one of your parents gets `die`d, which you can use to do any cleanup.
+When you're done with an Ent, call `yourEnt:die()`. This registers your Ent to be removed from the tree (which will remove all its children as well) at the end of the current frame. You'll get an "onDie" event call if you or one of your parents gets `die`d, which you can use to do any cleanup.
 
-By the way, a cool thing about the Ent default constructor is that you can do one-off entities by overloading the event methods in the constructor. Here's what I mean:
+An interesting thing about the Ent default constructor is that you can do one-off entities by overloading the event methods in the constructor. Here's what I mean:
 
     Ent{ onUpdate = function(self, dt) print("Updated! dt:" .. dt) end }:insert()
 
@@ -123,7 +123,7 @@ Although lovr-ent is tied in pretty closely with LÖVR, there's nothing LÖVR-sp
 
 ## Using namespaces
 
-If you want to understand namespaces, [it has its documentation on a separate page](https://bitbucket.org/runhello/namespace.lua).
+If you want to understand the namespace feature, [it has its documentation on a separate page](https://bitbucket.org/runhello/namespace.lua).
 
 But, the short version is: Normally in a Lua program every file has the same globals table. But if you put `namespace "somename"` at the top of your file, globals in that file will be shared only between other `namespace "somename"` files.
 
@@ -138,6 +138,10 @@ There's two files [types.lua](lua/engine/types.lua) and [lovr.lua](lua/engine/lo
 In types.lua:
 
 * `pull(dst, src)` - copy all the fields from one object into another
+* `tableInvert(t)` - takes a table and returns a new table with keys and values swapped
+* `tableConcat(a, b)` - given two tables, return a new table with all the key/value pairs from both
+* `tableSkim(a, keys)` - given a table and a list of keys, return a new table picking only the key/value pairs whose keys are in the list
+* `tableSkimUnpack(a, keys)` - given a table and a list of keys, return the unpacked values corresponding to the requested keys in order 
 * `tableTrue(t)` - true if table is nonempty
 * `toboolean(v)` - converts value to true (if truthy) or false (if falsy)
 * `ichars(str)` - like ipairs() but iterates over characters in a string
@@ -188,7 +192,7 @@ Lovr-ent also comes with a file full of Ents that act as simple UI elements:
 
     local ui2 = require "ent.ui2"
 
-At the moment, it contains labels and buttons and there's an auto-layout class that sticks all the elements in the corner one after the other. This is mostly documented [in the file](lua/ent/ui/init.lua), but the best way to understand it is to just read [the example program](lua/app/test/testUi.lua). It's all basically obvious.
+At the moment, it contains labels and buttons and there's an auto-layout class that sticks all the elements in the corner one after the other. This is mostly documented [in the file](lua/ent/ui/init.lua), but the best way to understand it is to just read [the example program](lua/app/test/testUi.lua). It's all hopefully obvious from the example.
 
 ### UI2: The nonobvious parts
 

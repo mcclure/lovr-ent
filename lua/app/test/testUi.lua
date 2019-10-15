@@ -8,6 +8,7 @@ local TestUi = classNamed("TestUi", ui2.ScreenEnt)
 
 function TestUi:onLoad()
 	ui2.routeMouse()
+	-- Create some buttons that do different things
 	local ents = {
 		ui2.ButtonEnt{label="X", onButton = function(self) -- Test die
 			self.swap:die()
@@ -29,13 +30,16 @@ function TestUi:onLoad()
 				self.label = self.label + 1
 		end},
 	}
+	-- Dynamically create some buttons that do nothing, just to fill up space and demonstrate line wrapping
 	for i,v in ipairs{"buttonx", "nonsense", "garb", "garbage", "not", "hing", "nothing", "no", "thing"} do
 		table.insert(ents, ui2.ButtonEnt{label=v})
 	end
+	-- Create a slider and a value watcher for that slider
 	local slider = ui2.SliderEnt()
 	table.insert(ents, slider)
 	table.insert(ents, ui2.SliderWatcherEnt{watch=slider})
 
+	-- Lay all the buttons out
 	local layout = ui2.PileLayout{managed=ents, parent=self, pass={swap=self}}
 	layout:layout()
 end

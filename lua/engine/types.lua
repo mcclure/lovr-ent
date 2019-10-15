@@ -12,7 +12,7 @@ function pull(dst, src) -- Insert all members of a into b
 	end
 end
 
-function tableReverse(t_) -- Reverse a table
+function tableInvert(t_) -- Reverse a table
 	local t = {}
 	for k,v in pairs(t_) do
 		t[v] = k
