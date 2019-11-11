@@ -27,6 +27,12 @@ function LoaderEnt:load(name)
 			self:load(v)
 		end
 	else
+		-- Allow (by removing) any accidental .lua files.
+		-- FIXME?: This means that it is naturally impossible to include a file named lua/init.lua. Oh well.
+		if stringx.endswith(name, ".lua") then
+			name = name:sub(1,-5)
+		end
+
 		local CLS = require(name)
 		if type(CLS) ~= "table" then
 			error(string.format("Loaded \"%s\" but it didn't return an entity", name))

@@ -1,7 +1,18 @@
 -- Helpers that are not basic lua tools but rather specifically rely on lovr APIs
 namespace "standard"
 
--- Convert a controller's current orientation to a simple vec3 and quat pair
+-- Extend Loc class with a function to "push" the transform to lovr.graphics
+function Loc:push()
+	lovr.graphics.push()
+	lovr.graphics.translate(self.at:unpack())
+	lovr.graphics.rotate(self.rotate:to_angle_axis_unpack())
+	if scale ~= false then
+		lovr.graphics.scale(self:scaleUnpack())
+	end
+end
+
+-- Convert a controller's current orientation to a simple vec3 and quat pair. With nil name gives headset
+-- Second argument is a "basis" Loc which is assumed to occur "before" the controller transform
 function unpackPose(controllerName, transform)
 	local x, y, z, angle, ax, ay, az = lovr.headset.getPose(controllerName)
 	local at = vec3(x,y,z)-- * 4

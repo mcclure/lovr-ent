@@ -144,17 +144,20 @@ In types.lua:
 * `tableSkimUnpack(a, keys)` - given a table and a list of keys, return the unpacked values corresponding to the requested keys in order 
 * `tableTrue(t)` - true if table is nonempty
 * `toboolean(v)` - converts value to true (if truthy) or false (if falsy)
+* `ipairsReverse(t)` - same as ipairs() but iterates keys in descending order
 * `ichars(str)` - like ipairs() but iterates over characters in a string
 * `mapRange(count, f)` - returns table mapping f over the integer range 1..count
 * `classNamed(name, parent)` - like calling Penlight `class()`, but sets the name
 * A queue class
 * A stack class
+* "Loc", a rigid body transform class
 
 In lovr.lua:
 
 * `unpackPose(controllerName)` - Given a controller name, returns a (vec3 at, quaternion rotation) pair describing its pose
 * `offsetLine(at, q, offset)` and `forwardLine(at,q)` - Takes the pair returned from `unpackPose` and either maps a vector into its pose's reference frame, or returns an arbitrary point the controller is "pointing at".
 * `primaryTouched(controllerName)`, `primaryDown(controllerName)`, `primaryAxis(controllerName)` - Equivalents of `lovr.headset` `isTouched`, `isDown` and `axis` but for whatever the appropriate "primary" thumb direction is on that device
+* Adds a `loc:push()` to Loc that `lovr.graphics.push()`es a Loc's transform
 
 ## How to use modelView
 
@@ -199,3 +202,5 @@ At the moment, it contains labels and buttons and there's an auto-layout class t
 When you create a layout manager object, one of the allowed constructor parameters is `pass=sometable`. When the layout manager does layout, for each object it lays out, it will take every field in `sometable` and set those same fields on the table. If you want, in an Ent subclass you make, to do something with the passed parameters other than just setting them, overload `layoutPass()`.
 
 There's a class in `ui2` named `SwapEnt`. This class adds one additional helper method to Ent, `swap(otherEnt)`. This method causes the `swap()`ed ent to `die()`, then queue `otherEnt` for birth on the next frame. What is this for? Well, probably, if you're making debug/test UI screens, you won't have just one UI screen. You probably have several screens and some kind of top level main menu linking them all. So when you write the Ent that allocates and lays out all your ButtonEnts, have it inherit from `SwapEnt`, and then you can easily swap to another screen by creating it and calling `Swap{}` or just close by calling `swap()` with nil. (The modelView app is a good example of how to build a multiscreen application this way.)
+
+Layout may take a constructor field named "mutable". Set this to true for layouts that you expect to change sometimes (IE, there is a button whose label might change after onLoad, changing the button's size). This field changes a few things: UiEnts in a mutable layout are allowed to have nil labels (though full layout will not occur while at least one UiEnt in the layout has a nil label); and UiEnts in a muable layer will be given a `self:relayout()` method which they should call on themselves when they know their size has changed. In both mutable and non-mutable layouts, you may call `:layout(true)` on a layout to force a re-layout of all buttons (potentially resizing in the process). There is an example of using this in my lovr MIDI project.

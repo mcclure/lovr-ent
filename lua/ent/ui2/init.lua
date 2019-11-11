@@ -13,6 +13,11 @@ local function fontHeight()
 	return flat.font:getHeight()*flat.fontscale
 end
 
+ui2.textmargin = 0.05 -- Margin around text. Tunable 
+ui2.screenmargin = (fontHeight() + ui2.textmargin*2)/2 -- Space between edge of screen and buttons. Tunable
+
+local margin = ui2.textmargin
+
 -- Return a point anchored to a bound
 -- bound: a bound2
 -- anchor: combination of (l)eft, (r)ight, (t)op, (b)ottom, x (c)enter, y (m)iddle
@@ -74,6 +79,11 @@ function ui2.Layout:add(e) -- Call to manage another item
 end
 
 function ui2.Layout:manage(e) -- For internal use
+	if self.mutable and not self.pass then self.pass = {} end
+	if self.mutable and not self.pass.relayout then
+		self.relayoutTemplate = function() self:layout(true) end
+		self.pass.relayout = self.relayoutTemplate
+	end
 	if self.pass and e.layoutPass then e:layoutPass(self.pass) end
 	if self.parent then e:insert(self.parent) end
 end
@@ -101,8 +111,6 @@ function ui2.PileLayout:_init(spec)
 	self.anchor = "lb" .. (self.anchor or "")
 end
 
-local margin = 0.05 -- Margin around text. Tunable 
-
 -- Perform all layout at once. If true, re-lay-out things already laid out
 function ui2.PileLayout:layout(relayout)
 	-- Constants: Logic
@@ -112,7 +120,7 @@ function ui2.PileLayout:layout(relayout)
 
 	-- Constants: Metrics
 	local fh = fontHeight() -- Raw height of font
-	local screenmargin = (fh + margin*2)/2 -- Space between edge of screen and buttons. Tunable
+	local screenmargin = ui2.screenmargin -- Space between edge of screen and buttons. Tunable
 	local spacing = margin
 
 	-- Logic constants
@@ -123,8 +131,16 @@ function ui2.PileLayout:layout(relayout)
 	local xface = self.face == "x"
 	local axis = vec2(moveright and 1 or -1, moveup and 1 or -1) -- Only thing anchor impacts
 
+	if self.mutable then
+		for _,v in ipairs(self.managed) do if not v.label then
+			self:prelayout()
+			return
+		end end
+	end
+
 	-- State
 	local okoverflow = toboolean(self.cursor) -- Overflows should be ignored
+	if relayout then self.cursor = nil end
 	self.cursor = self.cursor or vec2(leftedge, bottomedge) -- Placement cursor (start at bottom left)
 
 	for i = startAt,mn do -- Lay out everything not laid out
