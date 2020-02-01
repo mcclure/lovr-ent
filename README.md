@@ -5,6 +5,8 @@ The software in here is mostly a hodgepodge of "whatever I need", but the core i
 * A simple 2D UI library for LÖVR's on-monitor "mirror" window, useful for debug UI.
 * Modified versions of the [CPML](https://github.com/excessive/cpml) (vector math) and [Penlight](https://github.com/stevedonovan/Penlight) (classes and various Lua utilities) libraries
 * My [namespace.lua](https://bitbucket.org/runhello/namespace.lua) library
+* Helper code for making thread tools, and one class for offloading asset loading onto a side thread
+* A debug class for placing temporary cube and line markers at important points in space
 * A standalone app to preview 3D model files and inspect their materials, animation nodes and animations.
 
 A map of all included files is in [contents.txt](lua/contents.txt). The license information is [here](LICENSE.txt). I have a page with more LÖVR resources [here](https://mcclure.github.io/mermaid-lovr/).
@@ -131,11 +133,11 @@ The way I recommend using this is, look for the "create a namespace for your gam
 
 ("standard" is the namespace that's used by lovr-ent itself. You want your namespace to inherit from "standard" so it's got all the lovr-ent stuff in it.)
 
-## Other misc stuff
+## lovr-ent globals
 
-There's two files [types.lua](lua/engine/types.lua) and [lovr.lua](lua/engine/lovr.lua) which contain miscellaneous utilities. The contents are documented in the comments of those files, but they contain:
+There's several files in lovr-ent which contain miscellaneous utilities and which are included into the "standard" namespace by default. These global symbols are listed below; you can find more detailed comments for some of them in the linked files:
 
-In types.lua:
+In [types.lua](lua/engine/types.lua):
 
 * `pull(dst, src)` - copy all the fields from one object into another
 * `tableInvert(t)` - takes a table and returns a new table with keys and values swapped
@@ -143,21 +145,30 @@ In types.lua:
 * `tableSkim(a, keys)` - given a table and a list of keys, return a new table picking only the key/value pairs whose keys are in the list
 * `tableSkimUnpack(a, keys)` - given a table and a list of keys, return the unpacked values corresponding to the requested keys in order 
 * `tableTrue(t)` - true if table is nonempty
+* `tableCount(t)` - given a table returns the number of key/value pairs in it (including non-numeric keys)
 * `toboolean(v)` - converts value to true (if truthy) or false (if falsy)
 * `ipairsReverse(t)` - same as ipairs() but iterates keys in descending order
 * `ichars(str)` - like ipairs() but iterates over characters in a string
 * `mapRange(count, f)` - returns table mapping f over the integer range 1..count
 * `classNamed(name, parent)` - like calling Penlight `class()`, but sets the name
+* `stringTag(str, tag)` - Trivial function which returns "str-tag" if tag is non-nil and str if tag is nil.
 * A queue class
 * A stack class
-* "Loc", a rigid body transform class
 
-In lovr.lua:
+In [loc.lua](lua/engine/loc.lua):
+
+* "Loc", a rigid body transform class (see loc.lua for its functions or app/test/loc.lua for a demonstration). A Loc is a triplet of a position, rotation and scale. Locs can be composed and applied to vectors, like a mat4 (when applied to a vector the vector is scaled, then rotated, then translated).
+
+In [lovr.lua](lua/engine/types.lua):
 
 * `unpackPose(controllerName)` - Given a controller name, returns a (vec3 at, quaternion rotation) pair describing its pose
 * `offsetLine(at, q, offset)` and `forwardLine(at,q)` - Takes the pair returned from `unpackPose` and either maps a vector into its pose's reference frame, or returns an arbitrary point the controller is "pointing at".
 * `primaryTouched(controllerName)`, `primaryDown(controllerName)`, `primaryAxis(controllerName)` - Equivalents of `lovr.headset` `isTouched`, `isDown` and `axis` but for whatever the appropriate "primary" thumb direction is on that device
 * Adds a `loc:push()` to Loc that `lovr.graphics.push()`es a Loc's transform
+
+In [ugly.lua](lua/engine/ugly.lua):
+
+* `ugly` works exactly the same as the Penlight `pretty` class (it is a fork of `pretty`) but it shows only one layer of keys and values instead of recursing.
 
 ## How to use modelView
 
@@ -165,7 +176,7 @@ If you launch lovr-ent with the argument `app/debug/modelView`, like:
 
     lovr lovr-ent/lua app/debug/modelView
 
-This will launch an app that searches the entire lovr filesystem, lists all .gltf, .glb or .obj files it finds, and once you have selected one displays it, slowly rotating, with your choice of shaders.
+This will launch an app that searches the entire Lovr filesystem, lists all .gltf, .glb or .obj files it finds, and once you have selected one displays it, slowly rotating, with your choice of shaders.
 
 Clicking the Standard... button will allow you to adjust the shader properties, and clicking Edit... will allow you to view or alter (but not save back) some properties of the animations, materials, and skeleton nodes in the model. Some additional information will be printed to STDOUT in these panes.
 
@@ -203,4 +214,61 @@ When you create a layout manager object, one of the allowed constructor paramete
 
 There's a class in `ui2` named `SwapEnt`. This class adds one additional helper method to Ent, `swap(otherEnt)`. This method causes the `swap()`ed ent to `die()`, then queue `otherEnt` for birth on the next frame. What is this for? Well, probably, if you're making debug/test UI screens, you won't have just one UI screen. You probably have several screens and some kind of top level main menu linking them all. So when you write the Ent that allocates and lays out all your ButtonEnts, have it inherit from `SwapEnt`, and then you can easily swap to another screen by creating it and calling `Swap{}` or just close by calling `swap()` with nil. (The modelView app is a good example of how to build a multiscreen application this way.)
 
-Layout may take a constructor field named "mutable". Set this to true for layouts that you expect to change sometimes (IE, there is a button whose label might change after onLoad, changing the button's size). This field changes a few things: UiEnts in a mutable layout are allowed to have nil labels (though full layout will not occur while at least one UiEnt in the layout has a nil label); and UiEnts in a muable layer will be given a `self:relayout()` method which they should call on themselves when they know their size has changed. In both mutable and non-mutable layouts, you may call `:layout(true)` on a layout to force a re-layout of all buttons (potentially resizing in the process). There is an example of using this in my lovr MIDI project.
+Layout may take a constructor field named "mutable". Set this to true for layouts that you expect to change sometimes (IE, there is a button whose label might change after onLoad, changing the button's size). This field changes a few things: UiEnts in a mutable layout are allowed to have nil labels (though full layout will not occur while at least one UiEnt in the layout has a nil label); and UiEnts in a muable layer will be given a `self:relayout()` method which they should call on themselves when they know their size has changed. In both mutable and non-mutable layouts, you may call `:layout(true)` on a layout to force a re-layout of all buttons (potentially resizing in the process). There is an example of using this in my [Lovr MIDI project](https://github.com/mcclure/lovr/tree/ZP_midi).
+
+## Debug ents
+
+The "apps" [app/debug/hand](lua/app/debug/hand.lua) and [app/debug/fps](lua/app/debug/fps.lua), described above in the LoaderEnt doc, can also be `require`d and inserted as child Ents in the `onLoad` of an Ent you define. In addition, there are a couple included ents which are nice for debug purposes:
+
+### Floor
+
+[ent/debug/floor](lua/ent/debug/floor.lua) draws a placeholder checkerboard floor. That's it. There's some simulated fog. You can set a physical size (`floorSize`) and a checkerboard density (`floorPixels`) in the constructor.
+
+### DebugCubes
+
+[ent/debug/floor](lua/ent/debug/debugCubes.lua) is an Ent with fairly complex options (see comments in file) that draws temporary cubes. For example imagine your app declares `self.debugCubes = (require "ent.debug.debugCubes")():insert()`. You could then at some later point call:
+
+    self.debugCubes:add( vec3(2,1,1) )
+
+This call will cause a cube to be drawn at coordinate (2, 1, 1) for the next 1 second. This can be useful for visualizing game logic that takes place in space; say you have 3D objects moving around, and when they collide you drop a debug cube at the collision point.
+
+Instead of a vector you can give it a table describing specific properties of the cube:
+
+	self.debugCubes:add( {at=vec3(2,1,1), color={1,0,0}, lineTo=vec3(1,0,0), lineColor={0,0,0}}, 0.5, true )
+
+This will draw a red cube at (2, 1, 1), with a black line from its center to (1, 0, 0). The second argument causes the draw time to be half a second instead of the default 1. Passing true for the third argument causes the cube and line to be drawn "on top" of everything else (ie with depth test off).
+
+The exact keys accepted in the cube table are described in the comment in the source file, but especially noteworthy options are:
+
+- Passing false for the duration causes the cube to never expire (draw forever)
+- Passing true for the duration causes the cube to draw for one frame and then expire immediately (useful if, for exmaple, you call this add() in your `onUpdate` every frame)
+- Passing a `noCube=true` key in your cube description table causes it to draw no cube, only a line.
+
+Setting `onTop=true` in the DebugCubes constructor causes the cubes to always be drawn on top regardles of the third arguemnt.
+
+## Thread helpers
+
+The [engine/thread](lua/engine/thread) directory contains helpers for writing code that use Lovr threads. There is a flag `local singleThread = false` at the top of [main.lua](lua/main.lua); set this to true and the included thread tools (well, thread tool) will degrade gracefully to a single-threaded mode.
+
+### Loader
+
+The one finished thread utility is a loader class. `require` [engine.thread.loader](lua/engine/thread/loader.lua) and call Loader() to create a loader object:
+
+    self.textureData = Loader("textureData", "path/to/an/image.png")
+
+The moment this loader object is constructed, it will start loading image.png from disk and decoding it into a Lovr TextureData object. Later, when you need to use the TextureData object, call `self.textureData:get()`; if the TextureData has finished loading it will return it, otherwise it will block until loading finishes and then return it. The first argument determines what kind of data to load; the two currently recognized keys are "modelData" and "textureData". If you want to add more load types, edit [engine/thread/action/loader.lua](engine/thread/action/loader.lua).
+
+There are optional third and fourth arguments to the Loader constructor. The third argument is a "filter" function which is executed on the main thread on the loaded value as soon as the value is received from the helper thread; the fourth is the name of the loader thread to use (there can be more than one at once). So for example you could say:
+
+	self.texture = Loader("textureData", "path/to/texture.png", Loader.dataToTexture) 
+	self.model = Loader("modelData", "model/RemoteControl_L.glb", Loader.dataToModel, "model")
+
+You probably don't want a TextureData or a ModelData; you want a Texture or a Model. Unfortunately right now in Lovr Textures and Models can only be created on the main thread, so the built-in `Loader.dataToTexture` and `Loader.dataToModel` filters do that conversion for you so when you later call `self.texture:get()` you know it will return a texture. In this example the texture is loaded on the default loader thread and the model is loaded on a second loader thread identified by the key "model".
+
+As a very minor optimization, there's a `connect` method on the Loader class which can be used to kick off loader threads before you actually construct any Loader objects. For example I like to include the Loader class like this:
+
+    local Loader = require "engine.thread.loader"
+    Loader:connect()
+    Loader:connect("model")
+
+The loader threads take a **little** bit of time to run their init code, so calling `connect` early means that init code will start as soon as you've required loader.lua instead of waiting until you first initialize a Loader object.

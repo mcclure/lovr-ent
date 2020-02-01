@@ -2,7 +2,7 @@
 -- Assumes pl "class" in namespace
 -- IMPORTS ALL ON REQUIRE
 
-namespace "standard"
+namespace "minimal"
 
 function pull(dst, src) -- Insert all members of a into b
 	if dst and src then
@@ -43,8 +43,16 @@ function tableSkimUnpack(a, keys) -- Extract only these keys from a table (unpac
 	return unpack(t)
 end
 
-function tableTrue(e) -- True if table nonempty
-	return next(e) ~= nil
+function tableTrue(t) -- True if table nonempty
+	return next(t) ~= nil
+end
+
+function tableCount(t) -- Number of values in table (not just array part)
+	local keys = 0
+	for _,_2 in pairs(t) do
+		keys = keys + 1
+	end
+	return keys
 end
 
 function toboolean(v) -- As named
@@ -85,6 +93,18 @@ function classNamed(name, parent) -- create dynalloc class with name
 	local cls = class(parent)
 	cls._name = name
 	return cls
+end
+
+function stringTag(s, tag)
+	if tag then return s .. "-" .. tag end
+	return s
+end
+
+function lovrRequire(module) -- call with for example lovrRequire("thread") to load lovr.thread, if you might be in a file
+	local callerNamespace = getfenv(2)
+	local lovrTable = callerNamespace.lovr
+	if not lovrTable then lovrTable = {} callerNamespace.lovr = lovrTable end
+	if not lovrTable[module] then lovrTable[module] = require( "lovr."..module ) end
 end
 
 class.Queue() -- Queue w/operations push, pop, peek
@@ -155,56 +175,4 @@ function Stack:peek()
 end
 function Stack:empty()
 	return self.count == 0
-end
-
--- Rigid body transform class based on CPML
-local plMetatable = {__tostring = function(o) return o:to_string() end}
-class.Loc(nil, nil, plMetatable)
-function Loc:_init(at, rotate, scale) -- Warning treat contents as const
-	self.at = at or vec3()
-	self.rotate = rotate or quat()
-	self.scale = scale or 1
-end
-function Loc.fromPose(x,y,z, angle,ax,ay,az)
-	return Loc(vec3(x,y,z), quat.from_angle_axis(angle,ax,ay,az))
-end
-function Loc:toPose()
-	return self.at.x, self.at.y, self.at.z, self.rotate:to_angle_axis_unpack()
-end
-function Loc:clone()
-	return Loc(self.at, self.rotate, self.scale)
-end
-function Loc:assign(loc)
-	self.at = loc.at
-	self.rotate = loc.rotate
-	self.scale = loc.scale
-end
-function Loc:scaleUnpack() -- Return scale in 3-component form
-	return self.scale, self.scale, self.scale
-end
-function Loc:apply(v) -- The following methods are untested
-    return self.rotate * (v * self.scale) + self.at
-end
-function Loc:applyToVector(v)
-    return self.rotate * (v * self.scale)
-end
-function Loc:compose(v)
-    return Loc(self:apply(v.at), v.rotate * self.rotate, self.scale * v.scale)
-end
-function Loc:inverse(v)
-	local unrotate = self.rotate:inverse()
-	local unscale = self.scale ~= 0 and 1/self.scale or 0
-    return Loc(unrotate * -self.at * unscale, unrotate, unscale)
-end
-function Loc:pow(s)
-	return Loc(self.at * s, self.rotate:pow(s), math.pow(self.scale, s))
-end
-function Loc:lerp(v, s)
-	return Loc(self.at:lerp(v.at, s), self.rotate:slerp(v.rotate, s), self.scale + (v.scale - self.scale) * s)
-end
-function Loc:to_string()
-	local s = "(at:" .. tostring(self.at) .. " rot:" .. tostring(self.rotate)
-	if self.scale ~= 1 then s = s .. " scale:" .. tostring(self.scale) end
-	s = s .. ")"
-	return s
 end

@@ -18,7 +18,7 @@ function unpackPose(controllerName, transform)
 	local at = vec3(x,y,z)-- * 4
     local rotate = quat.from_angle_axis(angle, ax, ay, az)
     if transform then
-        local loc = transform:compose(Loc(at, rotate))
+        local loc = transform:precompose(Loc(at, rotate))
         return loc.at, loc.rotate
     end
 	return at, rotate
@@ -29,7 +29,7 @@ end
 -- Offset from a point, treating a line as an axis against which to interpret the offset
 -- Args: starting point, quaternion orientation, offset
 function offsetLine(at, q, v)
-	return at + q * v
+	return Loc(at, q):apply(v)
 end
 
 -- Get a point "a little ways along" a line

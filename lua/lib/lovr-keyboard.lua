@@ -1,4 +1,4 @@
-if type(jit) ~= 'table' then return false end -- Added from original
+if type(jit) ~= 'table' or lovr.getOS() == 'Android' then return false end -- Added from original
 
 local ffi = require 'ffi'
 local C = ffi.os == 'Windows' and ffi.load('glfw3') or ffi.C
@@ -137,6 +137,8 @@ end
 
 local keyboard = {}
 
+keyboard.suppressF5 = false
+
 function keyboard.isDown(key, ...)
   if not key then return false end
   local keycode = keymap[key]
@@ -146,7 +148,11 @@ end
 
 C.glfwSetKeyCallback(window, function(window, key, scancode, action, mods)
   if action ~= 2 and keymap[key] then
-    lovr.event.push(action > 0 and 'keypressed' or 'keyreleased', keymap[key])
+    if not keyboard.suppressF5 and keymap[key] == 'f5' then
+      lovr.event.quit("restart")
+    else
+      lovr.event.push(action > 0 and 'keypressed' or 'keyreleased', keymap[key])
+    end
   end
 end)
 

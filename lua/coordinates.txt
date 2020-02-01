@@ -1,3 +1,5 @@
+------ Coordinate systems
+
 x+ always right
 
 3D
@@ -11,8 +13,12 @@ Pixel shaders
 	y+ down
 
 "anchors" pair two letters:
-(l)eft (r)ight (c)enter  (t)op (b)ottom (m)iddle
+	(l)eft (r)ight (c)enter  (t)op (b)ottom (m)iddle
 
 Mouse events
-lua-mouse emits coordinates in framebuffer x,y pixel coordinates.
-ui2 uses coordinates on a euclidean plane where y = -1 is window bottom, y = +1 is window top, and pixels are square, which means the left and right sides are x - and + "aspect" (the width divided by the height).
+	lua-mouse emits coordinates in framebuffer x,y pixel coordinates.
+	ui2 uses coordinates on a euclidean plane where y = -1 is window bottom, y = +1 is window top, and pixels are square, which means the left and right sides are x - and + "aspect" (the width divided by the height).
+
+------ Threads
+
+Channels are of the form kind-up for sending from main to helpers and kind-dn for sending from helpers to main.

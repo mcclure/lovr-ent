@@ -24,10 +24,30 @@ engine
 engine/flat
 	Various constants for displaying objects in onMirror
 
+engine/thread
+	Tools and support for off-thread behavior. This is exposed as a series of "thread tools".
+	Each thread tool should have one outward-facing file at the top level here.
+engine/thread/loader
+	Thread tool that loads resources offthread and blocks only if the resource is requested before it's loaded.
+
+engine/thread/action
+	Thread tools keep their underlying implementations here (so they can be called from either main thread or helper thread)
+engine/thread/connection
+	Thread tools keep their main-thread-side code here
+engine/thread/helper
+	Thread tools keep their helper-thread-side code here
+
 ent
 	Component ents (project support that depends on ent and ent_common being already loaded)
 ent/ui2
 	2D UI components
+
+ent/debug
+	Component ents useful for debugging
+ent/debugCubes
+	Feed this class points, vectors and colors and it draws cubes and lines for a duration of time.
+ent/floor
+	Draws a basic checkerboard floor
 
 shader
 	Resource files containing shaders

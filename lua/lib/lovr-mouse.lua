@@ -1,4 +1,4 @@
-if type(jit) ~= 'table' then return false end -- Added from original
+if type(jit) ~= 'table' or lovr.getOS() == 'Android' then return false end -- Added from original
 
 local ffi = require 'ffi'
 local C = ffi.os == 'Windows' and ffi.load('glfw3') or ffi.C

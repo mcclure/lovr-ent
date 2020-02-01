@@ -1,3 +1,4 @@
+-- Show current FPS in corner at all times
 namespace "standard"
 
 local flat = require "engine.flat"

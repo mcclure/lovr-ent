@@ -9,6 +9,7 @@ function drawMode()
 	if ent.mode ~= "draw" then
 		ent.mode = "draw"
 		lovr.graphics.setDepthTest('lequal', true) -- TODO: Test if necessary
+		lovr.graphics.setFont() -- Undo ui2 library font scale
 	end
 end
 
