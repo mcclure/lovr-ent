@@ -248,7 +248,9 @@ Setting `onTop=true` in the DebugCubes constructor causes the cubes to always be
 
 ## Thread helpers
 
-The [engine/thread](lua/engine/thread) directory contains helpers for writing code that use Lovr threads. There is a flag `local singleThread = false` at the top of [main.lua](lua/main.lua); set this to true and the included thread tools (well, thread tool) will degrade gracefully to a single-threaded mode.
+The [engine/thread](lua/engine/thread) directory contains helpers for writing code that use Lovr threads. There is a flag `local singleThread = false` at the top of [main.lua](lua/main.lua); set this to true and the included thread tools (well, thread tool; see "Loader" below) will degrade gracefully to a single-threaded mode.
+
+I don't yet have documentation for the thread classes, however, there is a sample program app.test.thread; see the comments on the functions in the app/test/thread directory to see how doing threads the lovr-ent way works. 
 
 ### Loader
 
