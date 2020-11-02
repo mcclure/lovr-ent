@@ -5,13 +5,22 @@
 
 namespace "minimal"
 
-lovrRequire("math")
 lovrRequire("timer")
 
+-- Random time between 0 and 1.5
+-- Doing this for now instead of loading lovr.math because of lovr issue #316
+local randomMax = 1.5
+local accumulator = 1
+local function randomDuration()
+	accumulator = ( (accumulator * 6389.75591401 + 15581.1442314) / 311.155434 ) % randomMax
+	return accumulator
+end
+randomDuration() randomDuration()
+
 return function(x)
-	local doSleep = lovr.math.random() > 0.5
+	local doSleep = randomDuration() > randomMax/2
 	if doSleep then
-		local duration = lovr.math.random()*1.5
+		local duration = randomDuration()
 		print(string.format("Sleeping %0.02f sec", duration))
 		lovr.timer.sleep(duration)
 	end
