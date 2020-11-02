@@ -19,6 +19,7 @@ randomDuration() randomDuration()
 
 return function(x)
 	local doSleep = randomDuration() > randomMax/2
+	-- if x > 5 then q() end -- Uncomment to test thread errors
 	if doSleep then
 		local duration = randomDuration()
 		print(string.format("Sleeping %0.02f sec", duration))
