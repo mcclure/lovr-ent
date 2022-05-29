@@ -171,12 +171,21 @@ function mat4.from_transform(trans, rot, scale)
 	local c = cos(angle)
 	local s = sin(angle)
 
-	return new {
+	local result = new {
 		x*x*(1-c)+c,   y*x*(1-c)+z*s, x*z*(1-c)-y*s, 0,
 		x*y*(1-c)-z*s, y*y*(1-c)+c,   y*z*(1-c)+x*s, 0,
 		x*z*(1-c)+y*s, y*z*(1-c)-x*s, z*z*(1-c)+c,   0,
 		trans.x, trans.y, trans.z, 1
 	}
+	if scale ~= 1 then
+		result = result * new {
+			scale,0,0,0,
+			0,scale,0,0,
+			0,0,scale,0,
+			0,0,0,    1
+		}
+	end
+	return result
 end
 
 --- Create matrix from orthogonal.
@@ -542,10 +551,10 @@ function mat4.look_at(out, a, eye, look_at, up)
 	out[10] = y_axis.z
 	out[11] = z_axis.z
 	out[12] = 0
-	out[13] = 0
-	out[14] = 0
-	out[15] = 0
-	out[16] = 1
+	out[13] = -out[  1]*eye.x - out[4+1]*eye.y - out[8+1]*eye.z
+	out[14] = -out[  2]*eye.x - out[4+2]*eye.y - out[8+2]*eye.z
+	out[15] = -out[  3]*eye.x - out[4+3]*eye.y - out[8+3]*eye.z
+	out[16] = -out[  4]*eye.x - out[4+4]*eye.y - out[8+4]*eye.z + 1
 
   return out
 end
@@ -665,7 +674,7 @@ function mat4.to_string(a)
 	return str
 end
 
---- Convert a matrix to vec4s.
+--- Convert a matrix to row vec4s.
 -- @tparam mat4 a Matrix to be converted
 -- @treturn table vec4s
 function mat4.to_vec4s(a)
@@ -674,6 +683,18 @@ function mat4.to_vec4s(a)
 		{ a[5],  a[6],  a[7],  a[8]  },
 		{ a[9],  a[10], a[11], a[12] },
 		{ a[13], a[14], a[15], a[16] }
+	}
+end
+
+--- Convert a matrix to col vec4s.
+-- @tparam mat4 a Matrix to be converted
+-- @treturn table vec4s
+function mat4.to_vec4s_cols(a)
+	return {
+		{ a[1], a[5], a[9],  a[13] },
+		{ a[2], a[6], a[10], a[14] },
+		{ a[3], a[7], a[11], a[15] },
+		{ a[4], a[8], a[12], a[16] }
 	}
 end
 
@@ -804,6 +825,10 @@ function mat4_mt.__index(t, k)
 	return rawget(mat4, k)
 end
 
+function mat4_mt.unpack(a)
+	return a[1],a[2],a[3],a[4],a[5],a[6],a[7],a[8],a[9],a[10],a[11],a[12],a[13],a[14],a[15],a[16]
+end
+
 function mat4_mt.__newindex(t, k, v)
 	if type(t) == "cdata" then
 		if type(k) == "number" then
@@ -853,7 +878,9 @@ function mat4_mt.__mul(a, b)
 end
 
 if status then
-	ffi.metatype(new, mat4_mt)
+	xpcall(function() -- Allow this to silently fail; assume failure means someone messed with package.loaded
+		ffi.metatype(new, mat4_mt)
+	end, function() end)
 end
 
 return setmetatable({}, mat4_mt)

@@ -8,7 +8,7 @@ do
 	-- This should be only used in helper threads. Make sure this matches thread/helper/boot.lua
 	local space = namespace.space("minimal")
 
-	-- PL classes missing? add here:
+	-- Penlight classes missing? add here:
 	for _,v in ipairs{"class", "pretty", "stringx", "tablex"} do
 		space[v] = require("pl." .. v)
 	end
@@ -21,7 +21,7 @@ do
 	local space = namespace.space("standard", "minimal")
 
 	space.cpml = require "cpml"
-	for _,v in ipairs{"bound2", "bound3", "vec2", "vec3", "quat", "mat4", "color", "utils"} do
+	for _,v in ipairs{"bound2", "bound3", "vec2", "vec3", "quat", "mat4", "intersect", "color", "utils"} do
 		space[v] = space.cpml[v]
 	end
 	require "engine.loc"
@@ -49,9 +49,9 @@ namespace "standard"
 local defaultApp = "app/test/cube"
 
 function lovr.load()
-	ent.root = LoaderEnt(#arg > 0 and arg or {defaultApp})
+	ent.root = LoaderEnt(arg, defaultApp)
 	ent.root:route("onBoot") -- This will only be sent once
-	ent.root:insert()
+	ent.root:insert()        -- Will route onLoad
 end
 
 function lovr.update(dt)

@@ -8,7 +8,7 @@ local loadAction = {}
 
 loadAction.modelData = lovr.data.newModelData
 
-loadAction.textureData = lovr.data.newTextureData
+loadAction.textureData = lovr.data.newImage
 
 setmetatable(loadAction, {__index = function(self, key)
 	error(string.format("Loader type not recognized: %s", key or "[nil]"), 2)

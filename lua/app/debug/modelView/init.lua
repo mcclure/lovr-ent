@@ -22,8 +22,9 @@ function FileListUi:fileSearch(ents, dirpath)
 end
 
 function FileListUi:onLoad()
+	ui2.ScreenEnt.onLoad(self)
+
 	lovr.graphics.setBackgroundColor(0,0,0)
-	ui2.routeMouse()
 	local ents = {}
 	self:fileSearch(ents, "/")
 	if not tableTrue(ents) then

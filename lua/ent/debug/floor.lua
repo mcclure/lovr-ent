@@ -10,7 +10,7 @@ function Floor:_init(spec)
 end
 
 function Floor:onLoad()
-	local data = lovr.data.newTextureData(self.floorPixels, self.floorPixels, "rgba")
+	local data = lovr.data.newImage(self.floorPixels, self.floorPixels, "rgba")
 	for x=0,(self.floorPixels-1) do
 		for y=0,(self.floorPixels-1) do
 			local bright = (x+y)%2 == 0 and 0.5 or 0.75
@@ -28,7 +28,9 @@ function Floor:onDraw()
 	lovr.graphics.setShader(self.shader) -- Probably nil
 	lovr.graphics.setBlendMode("alpha", "alphamultiply")
 	lovr.graphics.setColor(1,1,1,1)
-	lovr.graphics.plane(self.floorMaterial, 0,0,0, self.floorSize, self.floorSize, math.pi/2,1,0,0)
+
+	-- Draw ever so slightly underneath the 0,0,0 point so as to avoid clipping into anything that other apps may be drawing at 0,0,0.
+	lovr.graphics.plane(self.floorMaterial, 0,-1/4096,0, self.floorSize, self.floorSize, -math.pi/2,1,0,0)
 end
 
 return Floor

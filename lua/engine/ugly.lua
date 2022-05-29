@@ -10,6 +10,7 @@ local concat = table.concat
 local mfloor, mhuge = math.floor, math.huge
 local mtype = math.type
 local lexer = require 'pl.lexer'
+local quote_string = require'pl.stringx'.quote_string
 local original_tostring = tostring
 local keywords
 
@@ -51,6 +52,25 @@ end
 local function is_identifier (s)
     return type(s) == 'string' and s:find('^[%a_][%w_]*$') and not keywords[s]
 end
+
+local function quote (s)
+    if type(s) == 'table' then
+        return pretty.write(s,'')
+    else
+        --AAS
+        return quote_string(s)-- ('%q'):format(tostring(s))
+    end
+end
+
+local function index (numkey,key)
+    --AAS
+    if not numkey then
+        key = quote(key)
+         key = key:find("^%[") and (" " .. key .. " ") or key
+    end
+    return '['..key..']'
+end
+
 
 --- Create a string representation of a Lua table.
 -- This function never fails, but may complain by returning an

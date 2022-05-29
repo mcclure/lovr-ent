@@ -39,7 +39,7 @@ function ModelViewUi:onLoad()
 		lovrExposure = 1,
 	}
 
-	ui2.routeMouse()
+	ModelDrawer.onLoad(self)
 	local ents = {
 		ui2.ButtonEnt{label="X", onButton = function(_self) -- Die
 			self:swap( Home() )

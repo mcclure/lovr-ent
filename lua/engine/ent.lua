@@ -9,6 +9,7 @@ require "engine.types"
 
 ent = {inputLevel = 1} -- State used by ent class
 route_terminate = {} -- A special value, return from an event and your children will not be called
+route_poison = {} -- A special value, return from an event and no more functions will be called this entire route() tree
 
 local doomed = {}
 
@@ -33,6 +34,7 @@ end
 
 -- Call this with an object and a parent and it will be inserted at the end of the next udpate, when dead entities are buried.
 function queueBirth(e, parent)
+	if not e then error("Asked to queue birth on nil entity") end
 	table.insert(doomed, function()
 		e:insert(parent)
 	end)
@@ -49,17 +51,61 @@ function Ent:_init(spec)
 	ent_id_generator = ent_id_generator + 1
 end
 
+-- We are "route counting" and need to de-route-count and also handle any pending inserts.
+-- This ugly workaround is necessary to prevent a bug where a child is inserted during a route; in that case undefined behavior occurs.
+-- FIXME: An alternate, terser solution might be to make all ents OrderedEnts.
+function Ent:_routeEnd(result, returnFirst, key, ...)
+	if self._routePendingInserts then
+		for i,v in ipairs(self._routePendingInserts) do
+			if result == route_poison or result == route_terminate or (returnFirst and result ~= nil) then break end
+			result = v:route(key, ...)
+		end
+		if self._routeCount == 1 then
+			for i,v in ipairs(self._routePendingInserts) do
+				self:register(v)
+			end
+			self._routePendingInserts = nil
+		end
+	end
+
+	self._routeCount = self._routeCount - 1
+
+	if result == route_poison or (returnFirst and result ~= route_terminate) then return result end
+end
+
 -- Call with a function name and an argument and it will be called first on this object, then all its children
 function Ent:route(key, ...)
 	local result
 	if self[key] then
 		result = self[key](self, ...)
 	end
-	if result ~= route_terminate then
+	if result == route_poison then return route_poison end
+	if result ~= route_terminate and self.kids then -- Notice: we don't have to check _routePendingInserts becuase there's no way to add to it above
+		self._routeCount = (self._routeCount or 0) + 1
 		for k,v in pairs(self.kids) do
-			v:route(key, ...)
+			result = v:route(key, ...)
+
+			if result == route_poison or result == route_terminate then break end
 		end
+		return self:_routeEnd(result, false, key, ...)
 	end
+end
+
+-- Call with a function name and an argument and it will be called first on this object, then all its children
+-- The first function to return a non-nil value will return its value all the way up the chain
+-- FIXME: Call _routeEnd
+function Ent:routeFirstValue(key, ...)
+	local result
+	if self[key] then
+		result = self[key](self, ...)
+	end
+	if result ~= nil then return result end
+	for k,v in pairs(self.kids) do
+		local result2 = v:routeFirstValue(key, ...)
+
+		if result2 ~= nil then return result2 end
+	end
+	return nil
 end
 
 -- Call with a parent object and the object will be inserted into the entity tree at that point
@@ -72,7 +118,15 @@ function Ent:insert(parent)
 	end
 	self.parent = parent
 	if parent then
-		parent:register(self)
+		if parent._routeCount and parent._routeCount > 0 then -- FIXME swap order -- see _routeEnd
+			if self._routePendingInserts then
+				table.insert(parent._routePendingInserts, self)
+			else
+				parent._routePendingInserts = {self}
+			end
+		else
+			parent:register(self)
+		end
 	end
 	-- There's an annoying special case to get onLoad to fire the very first boot.
 	-- FIXME: Figure out a better way of detecting roothood?
@@ -137,17 +191,39 @@ function OrderedEnt:unregister(child) -- TODO: Remove maybe?
 	Ent.unregister(self, child)
 end
 
-function OrderedEnt:route(key, payload) -- TODO: Repetitive with Ent:route()?
+function OrderedEnt:route(key, ...) -- TODO: Repetitive with Ent:route()?
 	local result
 	if self[key] then
-		result = self[key](self, payload)
+		result = self[key](self, ...)
 	end
+	if result == route_poison then return route_poison end
 	if result ~= route_terminate then
 		for _,id in ipairs(self.kidOrder) do
 			local v = self.kids[id]
-			if v then v:route(key, payload) end
+			if v then
+				local result2 = v:route(key, ...)
+
+				if result2 == route_poison then return route_poison end
+			end
 		end
 	end
+end
+
+function OrderedEnt:routeFirstValue(key, ...) -- TODO: Super repetitive with Ent:route()?
+	local result
+	if self[key] then
+		result = self[key](self, ...)
+	end
+	if result ~= nil then return result end
+	for _,id in ipairs(self.kidOrder) do
+		local v = self.kids[id]
+		if v then
+			local result2 = v:routeFirstValue(key, ...)
+
+			if result2 ~= nil then return result2 end
+		end
+	end
+	return nil
 end
 
 -- This class remembers the inputLevel at the moment it was constructed

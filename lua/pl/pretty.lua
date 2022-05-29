@@ -222,7 +222,10 @@ function pretty.write (tbl,space,not_clever)
     local writeit
     writeit = function (t,oldindent,indent)
         local tp = type(t)
-        if tp ~= 'string' and  tp ~= 'table' then
+        if tp == 'nil' then
+            putln("<nil>")
+            return
+        elseif tp ~= 'string' and  tp ~= 'table' then
             putln(quote_if_necessary(tostring(t))..',')
         elseif tp == 'string' then
             -- if t:find('\n') then

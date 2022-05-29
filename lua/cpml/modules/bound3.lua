@@ -3,6 +3,7 @@
 
 local modules = (...):gsub('%.[^%.]+$', '') .. "."
 local vec3    = require(modules .. "vec3")
+local utils   = require(modules .. "utils")
 
 local bound3    = {}
 local bound3_mt = {}
@@ -68,6 +69,14 @@ end
 -- @treturn bound3 Bound covering current min, current max and new point
 function bound3.extend(a, center)
 	return bound3.new(a.min:component_min(center), a.max:component_max(center))
+end
+
+--- Extend bound to entirety of other bound
+-- @tparam bound3 a bound
+-- @tparam bound3 bound to cover
+-- @treturn bound3 Bound covering current min and max of each bound in the pair
+function bound3.extend_bound(a, b)
+	return a:extend(b.min):extend(b.max)
 end
 
 --- Get size of bounding box as a vector 
@@ -160,6 +169,22 @@ function bound3.contains(a, v)
 	   and a.max.x >= v.x and a.max.y >= v.y and a.max.z >= v.z
 end
 
+--- Clamp point within bound
+-- @tparam bound2 a bound
+-- @tparam vec2 point to test
+-- @treturn vec2 point within bound as close to test point as possible
+function bound3.clamp(a, v)
+	return vec3(utils.clamp(v.x, a.min.x, a.max.x), utils.clamp(v.y, a.min.y, a.max.y), utils.clamp(v.z, a.min.z, a.max.z))
+end
+
+-- Round all components of all vectors to nearest int (or other precision).
+-- @tparam vec3 a bound to round.
+-- @tparam precision Digits after the decimal (round number if unspecified)
+-- @treturn vec3 Rounded bound
+function bound3.round(a, precision)
+	return bound3.new(a.min:round(precision), a.max:round(precision))
+end
+
 --- Return a formatted string.
 -- @tparam bound3 a bound to be turned into a string
 -- @treturn string formatted
@@ -175,7 +200,9 @@ function bound3_mt.__call(_, a, b)
 end
 
 if status then
-	ffi.metatype(new, bound3_mt)
+	xpcall(function() -- Allow this to silently fail; assume failure means someone messed with package.loaded
+		ffi.metatype(new, bound3_mt)
+	end, function() end)
 end
 
 return setmetatable({}, bound3_mt)

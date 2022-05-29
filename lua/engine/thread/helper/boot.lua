@@ -15,7 +15,7 @@ do
 end
 
 do
-	for _,name in ipairs {"standard", "skategirl", "halfjump"} do
+	for _,name in ipairs {"standard"} do
 		namespace.prepare(name, nil, function()
 			error("This file currently cannot be used in a helper thread.")
 		end)

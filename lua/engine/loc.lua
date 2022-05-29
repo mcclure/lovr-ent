@@ -17,6 +17,9 @@ end
 function Loc:toPose()
 	return self.at.x, self.at.y, self.at.z, self.rotate:to_angle_axis_unpack()
 end
+function Loc:unpack()
+	return self.at, self.rotate, self.scale
+end
 function Loc:clone()
 	return Loc(self.at, self.rotate, self.scale)
 end
@@ -40,6 +43,9 @@ end
 function Loc:precompose(v) -- Return Loc equivalent to "apply v, then self"
 	return v:compose(self)
 end
+function Loc:recenter(recenterVector)
+	return Loc(-recenterVector):compose(self):compose(Loc(recenterVector))
+end
 function Loc:inverse(v)
 	local unrotate = self.rotate:inverse()
 	local unscale = self.scale ~= 0 and 1/self.scale or 0
@@ -57,3 +63,7 @@ function Loc:to_string()
 	s = s .. ")"
 	return s
 end
+function Loc:to_mat4()
+	return mat4.from_transform(self.at, self.rotate, self.scale)
+end
+Loc.zero = Loc()

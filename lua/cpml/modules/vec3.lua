@@ -1,6 +1,8 @@
 --- A 3 component vector.
 -- @module vec3
 
+local modules = (...):gsub('%.[^%.]+$', '') .. "."
+local private = require(modules .. "_private_utils")
 local sqrt    = math.sqrt
 local cos     = math.cos
 local sin     = math.sin
@@ -102,7 +104,7 @@ function vec3.sub(a, b)
 	)
 end
 
---- Multiply a vector by another vectorr.
+--- Multiply a vector by another vector.
 -- @tparam vec3 a Left hand operand
 -- @tparam vec3 b Right hand operand
 -- @treturn vec3 out
@@ -263,11 +265,27 @@ function vec3.lerp(a, b, s)
 	return a + (b - a) * s
 end
 
--- Round all components to nearest int.
+-- Floor all components to nearest int
 -- @tparam vec3 a Vector to round.
--- @treturn vec3 Integer vector
-function vec3.round(a)
-	return vec3.new(math.floor(a.x+0.5), math.floor(a.y+0.5), math.floor(a.z+0.5))
+-- @treturn vec3 Rounded vector
+function vec3.floor(a, precision)
+	return vec3.new(math.floor(a.x), math.floor(a.y), math.floor(a.z))
+end
+
+-- Call function on all components of a vector.
+-- @tparam vec3 a Vector to map.
+-- @tparam f a function to map, optionally followed by arguments. 
+-- @treturn vec3 Modified vector
+function vec3.map(a, f, ...)
+	return vec3.new(f(a.x, ...), f(a.y, ...), f(a.z, ...))
+end
+
+-- Round all components to nearest int (or other precision).
+-- @tparam vec3 a Vector to round.
+-- @tparam precision Digits after the decimal (round numebr if unspecified)
+-- @treturn vec3 Rounded vector
+function vec3.round(a, precision)
+	return vec3.new(private.round(a.x, precision), private.round(a.y, precision), private.round(a.z, precision))
 end
 
 --- Unpack a vector into individual components.
@@ -295,6 +313,27 @@ function vec3.component_max(a, b)
 	return new(math.max(a.x, b.x), math.max(a.y, b.y), math.max(a.z, b.z))
 end
 
+-- Negate x axis only of vector.
+-- @tparam vec3 a Vector to x-flip.
+-- @treturn vec3 x-flipped vector
+function vec3.flip_x(a)
+	return vec3.new(-a.x, a.y, a.z)
+end
+
+-- Negate y axis only of vector.
+-- @tparam vec3 a Vector to y-flip.
+-- @treturn vec3 y-flipped vector
+function vec3.flip_y(a)
+	return vec3.new(a.x, -a.y, a.z)
+end
+
+-- Negate z axis only of vector.
+-- @tparam vec3 a Vector to z-flip.
+-- @treturn vec3 z-flipped vector
+function vec3.flip_z(a)
+	return vec3.new(a.x, a.y, -a.z)
+end
+
 --- Return a boolean showing if a table is or is not a vec3.
 -- @tparam vec3 a Vector to be tested
 -- @treturn boolean is_vec3
@@ -317,11 +356,18 @@ function vec3.is_zero(a)
 	return a.x == 0 and a.y == 0 and a.z == 0
 end
 
+-- Convert vec3 to vec3. (Useful if you don't know whether something is a vec2 or vec3.)
+-- @tparam vec3 a Vector to convert.
+-- @treturn vec3 the same Vector.
+function vec3.to_vec3(a)
+	return a
+end
+
 --- Return a formatted string.
 -- @tparam vec3 a Vector to be turned into a string
 -- @treturn string formatted
 function vec3.to_string(a)
-	return string.format("(%+0.3f,%+0.3f,%+0.3f)", a.x, a.y, a.z)
+	return string.format("(%s,%s,%s)", private.strf3(a.x), private.strf3(a.y), private.strf3(a.z))
 end
 
 vec3_mt.__index    = vec3
@@ -377,7 +423,9 @@ function vec3_mt.__div(a, b)
 end
 
 if status then
-	ffi.metatype(new, vec3_mt)
+	xpcall(function() -- Allow this to silently fail; assume failure means someone messed with package.loaded
+		ffi.metatype(new, vec3_mt)
+	end, function() end)
 end
 
 return setmetatable({}, vec3_mt)

@@ -7,7 +7,8 @@ local ui2 = require "ent.ui2"
 local TestUi = classNamed("TestUi", ui2.ScreenEnt)
 
 function TestUi:onLoad()
-	ui2.routeMouse()
+	ui2.ScreenEnt.onLoad(self)
+
 	-- Create some buttons that do different things
 	local ents = {
 		ui2.ButtonEnt{label="X", onButton = function(self) -- Test die
@@ -38,6 +39,26 @@ function TestUi:onLoad()
 	local slider = ui2.SliderEnt()
 	table.insert(ents, slider)
 	table.insert(ents, ui2.SliderWatcherEnt{watch=slider})
+
+	-- Test icons
+	do
+		local tdSize = 10
+		local tdLim = tdSize-1
+		local td = lovr.data.newImage(tdSize,tdSize)
+		for x=0,tdLim do for y=0,tdLim do -- This admittedly dense code generates a checkerboard icon
+			if x==0 or y==0 or x==tdLim or y==tdLim or (x+y)%2==0 then
+				td:setPixel(x,y,1,1,1,1)
+			end
+		end end
+		local texture = lovr.graphics.newTexture(td)
+		texture:setWrap('clamp')  texture:setFilter('nearest')
+		local material = lovr.graphics.newMaterial(texture)
+		table.insert(ents, ui2.ButtonEnt{icon=material, label="Has icon"})
+		table.insert(ents, ui2.UiEnt{iconTexture=texture})
+		table.insert(ents, ui2.ButtonEnt{icon='fill'})
+		table.insert(ents, ui2.ButtonEnt{label="BUTTON"})
+		--table.insert(ents, ui2.ButtonEnt{icon='fill', iconAspect=0.5, label="Narrow icon"})
+	end
 
 	-- Lay all the buttons out
 	local layout = ui2.PileLayout{managed=ents, parent=self, pass={swap=self}}

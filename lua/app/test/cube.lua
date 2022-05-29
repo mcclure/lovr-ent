@@ -4,7 +4,7 @@ namespace("cubetest", "standard")
 local CubeTest = classNamed("CubeTest", Ent)
 local shader = require "shader/shader"
 
-function CubeTest:onLoad(dt)
+function CubeTest:onLoad()
 	self.time = 0
 end
 
@@ -12,7 +12,7 @@ function CubeTest:onUpdate(dt)
 	self.time = self.time + math.max(dt, 0.05)
 end
 
-function CubeTest:onDraw(dt)
+function CubeTest:onDraw()
 	lovr.graphics.clear(1,1,1) lovr.graphics.setShader(shader)
 
 	local count, width, spacing = 5, 0.4, 2

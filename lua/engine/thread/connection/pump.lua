@@ -11,7 +11,7 @@ local PumpEnt = classNamed("PumpEnt", Ent)
 -- methods:
 --     send(kind, ...): send message to the other side
 
-function read(channel, force)
+local function read(channel, force)
 	if not force then return channel:pop(false) end
 	while true do
 		local v = channel:pop(0.1)
@@ -45,7 +45,7 @@ function PumpEnt:drain(force)
 	local channelSend, channelRecv = self:connect()
 	while not self.responseHandlers:empty() do
 		local result1 = read(channelRecv, force)
-		if not result1 then break end
+		if result1 == nil then break end
 
 		local kind = self.responseHandlers:pop()
 		local handler = self.handler[kind]
