@@ -7,7 +7,7 @@ local Loader = classNamed("Loader")
 local singleThread = ent and ent.singleThread
 local newLoaderConnection
 local baseKey
-local loaderConnections
+local loaderConnections -- Connection logic is complex because Loader can potentially be managing multiple threads
 local loaderAction
 
 if singleThread then
@@ -39,7 +39,6 @@ else
 		}
 	end
 end
-local globalConnection
 
 function Loader:_init(kind, path, filter, channelTag)
 	self.channel = self:connect(channelTag)

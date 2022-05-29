@@ -75,7 +75,7 @@ if not singlethread then -- Kludge: Currently only threading uses onQuit. Instea
 		ent.root:route("onQuit")
 	end
 
-	function lovr.threaderror(thread, message)
-		error(string.format("Error on thread:\n%s", (message or "[nil]")))
-	end
+	--function lovr.threaderror(thread, message)
+	--	error(string.format("Error on thread:\n%s", (message or "[nil]")))
+	--end
 end

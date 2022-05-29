@@ -21,12 +21,14 @@ end
 
 function PumpEnt:args() end
 
+-- Notice thread boots and connection is made at *insert*, not in onLoad.
+-- PumpEnt's only participation in the ent lifecycle is onUpdate/onBury.
 function PumpEnt:insert(parent)
 	self.thread = lovr.thread.newThread(self.boot)
 	self.thread:start(self.tag, self:args())
 
 	self.boot = nil
-	Ent.insert(self, parent)
+	return Ent.insert(self, parent)
 end
 
 function PumpEnt:connect()
