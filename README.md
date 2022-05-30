@@ -77,7 +77,7 @@ So Ents live in a tree of entities. If you've used Unity, Ents are kind of like 
 
 ### Command line features
 
-There's a built-in entity (LoaderEnt) that loads and runs Ent classes from disk. The root entity is always LoaderEnt, and it loads the classes you specify in the command line. So if you launch your game by running:
+There's a built-in entity (LoaderEnt) that loads and runs Ent classes from disk. The root entity in lovr-ent is always LoaderEnt, and it loads the classes you specify on the command line. So if you launch your game by running:
 
     lovr lovr-ent/lua app/test/testUi
 
